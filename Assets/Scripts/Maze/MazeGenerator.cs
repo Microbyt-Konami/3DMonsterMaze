@@ -1,10 +1,17 @@
+using System.Linq;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using UnityEngine;
+using Random = Unity.Mathematics.Random;
 
 /*
+    https://professor-l.github.io/mazes/
+    https://weblog.jamisbuck.org/2011/2/7/maze-generation-algorithm-recap
+    https://weblog.jamisbuck.org/2010/12/29/maze-generation-eller-s-algorithm
+    
+
     https://www.redalyc.org/articulo.oa?id=81629470011
 
     https://oa.upm.es/76050/1/TFG_JOSE_ANTONIO_MARTINEZ_MARTINEZ.pdf
@@ -50,7 +57,7 @@ en función de una u otra estrategia.
 Se trata del algoritmo más sencillo de entre todos. Debido a su trivialidad no se le atribuye autor
 concreto.
 Ha sido elegido para servir como punto de referencia al resto de algoritmos. Es el más sencillo
-de implementar y produce los laberintos más limitados, por lo que el resto de los algoritmos
+de implementar y produce los laberintos más limitados, por lo queresto de los algoritmos
 supondrán mejoras respecto a este.
 El funcionamiento de este algoritmo se basa en la toma azarosa de decisiones. Para cada celda
 se elige al azar si esta se conecta con su vecina derecha o superior.
@@ -291,60 +298,102 @@ Para cada fila menos la última:
     Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
  */
 
+/// <summary>
+/// 
+/// </summary>
 public struct EllerJob : IJob
 {
+    public uint seed;
     public int rows, columns;
+    public NativeList<int> setCells;
 
-    [ReadOnly] public NativeHashMap<int, int> neighborcells;
-
-    // Conjuntos: { {2},{3}.{2,4},{5} }
-    // setCellsRefs: { 2,3,2,4,5 }
-    // setsNumber:{ 1,2,3,3,4 }
-    [ReadOnly] public NativeList<int> setCellsRefs;
-    [ReadOnly] public NativeList<int> setsNumber;
-    [ReadOnly] public int rowCurrent;
+    private Random random;
 
     public void Execute()
     {
-        InitCells();
-    }
+        int i, j, row, lastSet;
 
-    private void InitCells()
-    {
-        neighborcells = new NativeHashMap<int, int>();
-        setCellsRefs = new NativeList<int>();
-        setsNumber = new NativeList<int>();
-        rowCurrent = rows - 1;
-    }
-}
-
-public struct Prueba
-{
-    public float x, y, z;
-}
-
-public struct PruebaJob : IJob
-{
-    public Prueba prueba;
-    public NativeArray<float> values;
-
-    public void Execute()
-    {
-        InitPrueba();
-        for (int i = 0; i < values.Length; i++)
+        random.InitState(seed);
+        // La primera fila cada celda pertenece a un conjunto único, columna 1 conjunto 1, columna 2 conjunto 2, etc.
+        setCells = new NativeList<int>(rows * columns, Allocator.TempJob);
+        for (i = 0; i < setCells.Length; i++)
+            setCells.Add(0);
+        for (i = 0; i < columns; i++)
+            setCells[i] = i + 1;
+        row = 0;
+        // primera celda de la fila
+        i = 0;
+        // ultima celda de la fila
+        j = columns - 1;
+        lastSet = columns;
+        // por cada fila menos la ultima
+        for (; row < rows - 1; row++, i += rows, j += rows)
         {
-            values[i] = prueba.x + 0.2f;
+            // en la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no
+            for (int k = 0; k < columns - 1; k++)
+                if (random.NextBool())
+                    setCells[i + k + 1] = setCells[i + k];
+
+            // por cada celda de la fila decidimos aleatoriamente si une con la celda de abajo. si se unen se ponen en el mismo conjunto de la celda tratada sino esta celda se pone en un nuevo conjunto
+            int c1p = i + rows;
+            int c1f = j + rows;
+            int i0 = i;
+
+            for (int k = c1p; k <= c1f; k++, i0++)
+            {
+                if (random.NextBool())
+                    setCells[k] = lastSet++;
+                else
+                    setCells[k] = setCells[i0];
+            }
+        }
+
+        //se conectan todas las celdas que no pertenezcan al mismo conjunto entre sí
+        lastSet++;
+        for (; i <= j; i++)
+        {
+            if (setCells[i] == 0)
+                setCells[i] = lastSet;
         }
     }
+}
 
-    private void InitPrueba()
+/*
+public struct PruebaJob : IJob
+{
+    public uint seed;
+    public NativeArray<float> values;
+
+    private Random random;
+
+    public void Execute()
     {
-        prueba = new Prueba { x = 1, y = 2, z = 3 };
+        random.InitState(seed);
+        for (int i = 0; i < values.Length; i++)
+        {
+            values[i] = random.NextFloat(0, 10);
+        }
     }
 }
+*/
 
 public class MazeGenerator : MonoBehaviour
 {
+    public int[] setCells;
+
+    void Start()
+    {
+        var job = new EllerJob
+        {
+            seed = (uint)UnityEngine.Random.Range(int.MinValue, int.MaxValue),
+            rows = 10,
+            columns = 10
+        };
+
+        job.Execute();
+        setCells = job.setCells.ToArray();
+    }
+    /*
     private PruebaJob _job;
 
     void Start()
@@ -353,19 +402,19 @@ public class MazeGenerator : MonoBehaviour
 
         _job = new PruebaJob()
         {
+            seed = (uint)UnityEngine.Random.Range(0, int.MaxValue),
             //prueba = new Prueba { x = 1, y = 2, z = 3 },
             values = values
         };
 
+        //_job.Run();
         // Schedule() puts the job instance on the job queue.
         JobHandle findHandle = _job.Schedule();
-
         findHandle.Complete();
 
-        Debug.Log($"x: {_job.prueba.x}, y: {_job.prueba.y}, z: {_job.prueba.z}");
         foreach (var value in _job.values)
         {
             Debug.Log(value);
         }
-    }
+    }*/
 }
