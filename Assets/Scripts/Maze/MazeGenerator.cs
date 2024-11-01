@@ -1,10 +1,14 @@
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Jobs;
 using UnityEngine;
 
 /*
     https://www.redalyc.org/articulo.oa?id=81629470011
-    
+
     https://oa.upm.es/76050/1/TFG_JOSE_ANTONIO_MARTINEZ_MARTINEZ.pdf
-    
+
 Laberinto “Perfecto” o conectado simplemente: Un laberinto perfecto, es aquel laberinto
 que no presenta ciclos en su estructura, es decir, aquel para el que solo existe un único
 camino entre dos puntos cualesquiera. Además, un laberinto perfecto no debe poseer
@@ -78,14 +82,14 @@ A continuación, se mostrarán unas capturas de la herramienta de visualizado ge
 empleando este algoritmo para destacar las características mencionadas.
 
 Para cada Celda del laberinto:
-	If Celda no tiene vecina superior ni derecha:
-		Continue
-	Else If Celda no tiene vecina superior:
-		Conectar Celda y vecina derecha
-	Else If Celda no tiene vecina derecha:
-		Conectar Celda y vecina superior
-	Else:
-		Conectar Celda y vecina superior o derecha al azar
+    If Celda no tiene vecina superior ni derecha:
+        Continue
+    Else If Celda no tiene vecina superior:
+        Conectar Celda y vecina derecha
+    Else If Celda no tiene vecina derecha:
+        Conectar Celda y vecina superior
+    Else:
+        Conectar Celda y vecina superior o derecha al azar
 
 ----------------------------------------------------------------------------------------------------------------
 
@@ -131,16 +135,16 @@ memoria la totalidad del laberinto. Esta situación solo podría darse en caso d
 formado fuese un laberinto unicursal.
 
 PilaCeldas = nueva pila
-	Insertar celda aleatoria en PilaCeldas
+    Insertar celda aleatoria en PilaCeldas
 Mientras PilaCeldas no esté vacía:
-	CeldaActual = Peek cabeza de PilaCeldas (sin extraer la cabeza)
-	If CeldaActual tiene vecinos no visitados:
-		VecinoElegido = vecino aleatorio de CeldaActual
-		Conectar CeldaActual y VecinoElegido
-		Insertar VecinoElegido en PilaCeldas
-	If CeldaActual no tiene vecinos no visitados
-		Extraer cabeza de PilaCeldas
-		
+    CeldaActual = Peek cabeza de PilaCeldas (sin extraer la cabeza)
+    If CeldaActual tiene vecinos no visitados:
+        VecinoElegido = vecino aleatorio de CeldaActual
+        Conectar CeldaActual y VecinoElegido
+        Insertar VecinoElegido en PilaCeldas
+    If CeldaActual no tiene vecinos no visitados
+        Extraer cabeza de PilaCeldas
+
 ----------------------------------------------------------------------------------------------------------------
 
 Aldous-Broder
@@ -171,13 +175,13 @@ quedarse atrapado hasta que las elecciones aleatorias le lleven a la última cel
 Su complejidad espacial es O(1) al no necesitar almacenar ninguna información.
 
 CeldaActual = celda aleatoria del laberinto
-	Mientras haya celdas sin visitar:
-		Marcar CeldaActual como visitada
-		VecinoAleatorio = vecino aleatorio de CeldaActual
-		If VecinoAleatorio no ha sido visitado aún:
-			Conectar CeldaActual y VecinoAleatorio
-		CeldaActual = VecinoAleatorio
-		
+    Mientras haya celdas sin visitar:
+        Marcar CeldaActual como visitada
+        VecinoAleatorio = vecino aleatorio de CeldaActual
+        If VecinoAleatorio no ha sido visitado aún:
+            Conectar CeldaActual y VecinoAleatorio
+        CeldaActual = VecinoAleatorio
+
 ----------------------------------------------------------------------------------------------------------------
 
 Árbol creciente
@@ -216,18 +220,18 @@ CeldasActivas = nueva lista
 Insertar celda aleatoria en CeldasActivas
 
 Mientras CeldasActivas tenga celdas:
-	CeldaActual = celda de CeldasActivas elegida mediante una función
-	If CeldaActual tiene vecinos no visitados:
-		VecinoElegido = vecino no visitado aleatorio de CeldaActual
-		Conectar CeldaActual y VecinoElegido
-		Añadir VecinoElegido a CeldasActivas
-	If CeldaActual no tiene vecinos no visitados:
-		Eliminar CeldaActual de CeldasActivas
+    CeldaActual = celda de CeldasActivas elegida mediante una función
+    If CeldaActual tiene vecinos no visitados:
+        VecinoElegido = vecino no visitado aleatorio de CeldaActual
+        Conectar CeldaActual y VecinoElegido
+        Añadir VecinoElegido a CeldasActivas
+    If CeldaActual no tiene vecinos no visitados:
+        Eliminar CeldaActual de CeldasActivas
 
 La función que elige CeldaActual en cada iteración puede ser elegida con total libertad.
 Algunas funciones populares son: la última celda de la lista siempre (comportamiento de
 backtracker recursivo), la primera siempre, aleatorio entre todas.
-		
+
 ----------------------------------------------------------------------------------------------------------------
 
 Eller
@@ -273,20 +277,95 @@ una para decidir si une o no cada par de celdas de una fila y otra para unir cad
 celdas con la fila siguiente.
 Su complejidad espacial es O(N) puesto que en todo momento debe almacenar la información
 de una fila en memoria.
-		
+
 ----------------------------------------------------------------------------------------------------------------
 ConjuntosCeldas = lista de conjuntos con tantos conjuntos como columnas haya
 
 Para cada fila menos la última:
-	Para cada par de celdas adyacentes en esa fila:
-		Si el par pertenece a distinto conjunto:
-			Unir los conjuntos y conectar las celdas al azar
-	Para cada par de conjuntos:
-		Elegir entre 1 y longitud de conjunto celdas de ese conjunto (al azar):
-		Conectar esas celdas con las celdas de la siguiente fila
-	Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
+    Para cada par de celdas adyacentes en esa fila:
+        Si el par pertenece a distinto conjunto:
+            Unir los conjuntos y conectar las celdas al azar
+    Para cada par de conjuntos:
+        Elegir entre 1 y longitud de conjunto celdas de ese conjunto (al azar):
+        Conectar esas celdas con las celdas de la siguiente fila
+    Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
  */
+
+public struct EllerJob : IJob
+{
+    public int rows, columns;
+
+    [ReadOnly] public NativeHashMap<int, int> neighborcells;
+
+    // Conjuntos: { {2},{3}.{2,4},{5} }
+    // setCellsRefs: { 2,3,2,4,5 }
+    // setsNumber:{ 1,2,3,3,4 }
+    [ReadOnly] public NativeList<int> setCellsRefs;
+    [ReadOnly] public NativeList<int> setsNumber;
+    [ReadOnly] public int rowCurrent;
+
+    public void Execute()
+    {
+        InitCells();
+    }
+
+    private void InitCells()
+    {
+        neighborcells = new NativeHashMap<int, int>();
+        setCellsRefs = new NativeList<int>();
+        setsNumber = new NativeList<int>();
+        rowCurrent = rows - 1;
+    }
+}
+
+public struct Prueba
+{
+    public float x, y, z;
+}
+
+public struct PruebaJob : IJob
+{
+    public Prueba prueba;
+    public NativeArray<float> values;
+
+    public void Execute()
+    {
+        InitPrueba();
+        for (int i = 0; i < values.Length; i++)
+        {
+            values[i] = prueba.x + 0.2f;
+        }
+    }
+
+    private void InitPrueba()
+    {
+        prueba = new Prueba { x = 1, y = 2, z = 3 };
+    }
+}
 
 public class MazeGenerator : MonoBehaviour
 {
+    private PruebaJob _job;
+
+    void Start()
+    {
+        var values = new NativeArray<float>(10, Allocator.TempJob);
+
+        _job = new PruebaJob()
+        {
+            //prueba = new Prueba { x = 1, y = 2, z = 3 },
+            values = values
+        };
+
+        // Schedule() puts the job instance on the job queue.
+        JobHandle findHandle = _job.Schedule();
+
+        findHandle.Complete();
+
+        Debug.Log($"x: {_job.prueba.x}, y: {_job.prueba.y}, z: {_job.prueba.z}");
+        foreach (var value in _job.values)
+        {
+            Debug.Log(value);
+        }
+    }
 }
