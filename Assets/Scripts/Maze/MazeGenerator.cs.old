@@ -1,0 +1,239 @@
+using System.Text;
+using Unity.Collections;
+using Unity.Jobs;
+using UnityEditor;
+using UnityEngine;
+using Random = Unity.Mathematics.Random;
+
+
+/// <summary>
+/// 
+/// </summary>
+public struct EllerJob : IJob
+{
+    public uint seed;
+    public int rows, columns;
+    public NativeArray<int> setCells;
+
+    /*
+     *      1 2 3 4 5
+     * desp 0 0 0 0 0
+     * set  0 1 2 3 4
+     * end  0 1 2 3 4
+     *
+     *      1 2 3 1 5
+     * desp 3 0 0 0 0
+     * set  0 1 2   4
+     * end  3 1 2   4
+     *
+     *      1  1  3  1  5
+     * desp 3  0  0  -2 0
+     * set  0     2     4
+     * end  1     2     4
+     */
+
+    private NativeList<int> sets;
+    private NativeArray<int> despSetCells;
+    private NativeHashMap<int, int> setIniCells;
+    private NativeHashMap<int, int> setEndCells;
+    private NativeHashMap<int, int> setCountCells;
+    private Random random;
+
+    private int rowIdxIni, rowIdxEnd, lastSet;
+
+    public void Execute()
+    {
+        int row;
+
+        random.InitState(seed);
+        // La primera fila cada celda pertenece a un conjunto único, columna 1 conjunto 1, columna 2 conjunto 2, etc.
+        setCells = new NativeArray<int>(rows * columns, Allocator.TempJob);
+        despSetCells = new NativeArray<int>(columns, Allocator.TempJob);
+        setIniCells = new NativeHashMap<int, int>(columns, Allocator.TempJob);
+        setEndCells = new NativeHashMap<int, int>(columns, Allocator.TempJob);
+        setCountCells = new NativeHashMap<int, int>(columns, Allocator.TempJob);
+        sets = new NativeList<int>(columns, Allocator.TempJob);
+
+        for (rowIdxIni = 0; rowIdxIni < columns; rowIdxIni++)
+        {
+            var set = rowIdxIni + 1;
+
+            setCells[rowIdxIni] = rowIdxIni + 1;
+            SetIni(set, rowIdxIni);
+        }
+
+        row = 0;
+        // primera celda de la fila
+        rowIdxIni = 0;
+        // ultima celda de la fila
+        rowIdxEnd = columns - 1;
+        lastSet = columns;
+
+        // por cada fila menos la ultima
+        for (; row < rows - 1; row++, rowIdxIni += columns, rowIdxEnd += columns)
+        {
+            // en la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no
+            for (int k = 0; k < columns - 1; k++)
+                if (random.NextBool())
+                {
+                    var set = setCells[rowIdxIni + k];
+
+                    RemoveCellSet(setCells[rowIdxIni + k + 1]);
+                    AddCellSet(set, k);
+                    setCells[rowIdxIni + k + 1] = set;
+                }
+
+            /*
+             * Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.
+             * Las celdas de la siguiente fila a las que nos conectamos deben asignarse al conjunto de la celda que está encima de ellas
+             */
+
+            int count = sets.Length;
+
+            for (var i = 0; i < count; i++)
+                VerticalConnectionsSet(sets[i]);
+        }
+
+        //se conectan todas las celdas que no pertenezcan al mismo conjunto entre sí
+        lastSet++;
+        for (; rowIdxIni <= rowIdxEnd; rowIdxIni++)
+        {
+            if (setCells[rowIdxIni] == 0)
+                setCells[rowIdxIni] = lastSet;
+        }
+
+        despSetCells.Dispose();
+        setIniCells.Dispose();
+        setEndCells.Dispose();
+        setCountCells.Dispose();
+        sets.Dispose();
+    }
+
+    private void SetIni(int set, int i)
+    {
+        sets.Add(set);
+        despSetCells[i] = 0;
+        setIniCells.Add(set, i);
+        setEndCells.Add(set, i);
+        setCountCells.Add(set, 1);
+    }
+
+    private void AddCellSet(int set, int i)
+    {
+        var idxEnd = setEndCells[set];
+
+        despSetCells[idxEnd] = i - idxEnd;
+        setEndCells[set] = i;
+        setCountCells[set]++;
+    }
+
+    private void RemoveCellSet(int set)
+    {
+        var idx = sets.IndexOf(set);
+
+        if (idx < 0)
+            return;
+
+        sets.RemoveAt(idx);
+        setIniCells.Remove(set);
+        setEndCells.Remove(set);
+        setCountCells.Remove(set);
+    }
+
+    private void VerticalConnectionsSet(int set)
+    {
+        if (!setCountCells.TryGetValue(set, out int count) || setIniCells.TryGetValue(set, out int idx))
+            return;
+
+        // al menos una celda del conjunto se tiene que conecta. Elegimos una aleatoriamente
+        int ndxRandom = random.NextInt(count);
+
+        /*
+         * Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.
+         * Las celdas de la siguiente fila a las que nos conectamos deben asignarse al conjunto de la celda que está encima de ellas
+         */
+
+        for (int i = 0; i < count; i++)
+        {
+            if (i == ndxRandom || random.NextBool())
+                setCells[rowIdxIni + idx + columns] = setCells[rowIdxIni + idx];
+            else
+                setCells[rowIdxIni + idx + columns] = ++lastSet;
+
+            idx += despSetCells[idx];
+        }
+    }
+}
+
+/*
+public struct PruebaJob : IJob
+{
+    public uint seed;
+    public NativeArray<float> values;
+
+    private Random random;
+
+    public void Execute()
+    {
+        random.InitState(seed);
+        for (int i = 0; i < values.Length; i++)
+        {
+            values[i] = random.NextFloat(0, 10);
+        }
+    }
+}
+*/
+
+public class MazeGenerator : MonoBehaviour
+{
+    public int rows = 10, columns = 10;
+    public NativeArray<int> setCells;
+
+    void Start()
+    {
+        var job = new EllerJob
+        {
+            seed = (uint)UnityEngine.Random.Range(int.MinValue, int.MaxValue),
+            rows = rows,
+            columns = columns
+        };
+
+        job.Execute();
+        setCells = new NativeArray<int>(job.setCells, Allocator.Persistent);
+        int idx = 0;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+                sb.Append($"{setCells[idx++]} ");
+            sb.AppendLine();
+        }
+
+        Debug.Log(sb.ToString());
+    }
+    /*
+    private PruebaJob _job;
+
+    void Start()
+    {
+        var values = new NativeArray<float>(10, Allocator.TempJob);
+
+        _job = new PruebaJob()
+        {
+            seed = (uint)UnityEngine.Random.Range(0, int.MaxValue),
+            //prueba = new Prueba { x = 1, y = 2, z = 3 },
+            values = values
+        };
+
+        //_job.Run();
+        // Schedule() puts the job instance on the job queue.
+        JobHandle findHandle = _job.Schedule();
+        findHandle.Complete();
+
+        foreach (var value in _job.values)
+        {
+            Debug.Log(value);
+        }
+    }*/
+}

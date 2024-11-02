@@ -1008,6 +1008,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa5329f59412f9fb0905c55d2e26f888, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  rows: 10
+  columns: 10
+  <SetCells>k__BackingField: []
 --- !u!4 &927761874
 Transform:
   m_ObjectHideFlags: 0
