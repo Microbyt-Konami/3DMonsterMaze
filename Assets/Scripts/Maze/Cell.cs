@@ -10,10 +10,14 @@ public enum CellNeighbor
 }
 
 [Serializable]
-public class Cell : IEquatable<Cell>
+public class Cell : IEquatable<Cell>, IComparable<Cell>
 {
     public int row;
     public int column;
+    public SetCells set;
+    public bool used;
+    
+    public bool IsAssigned() => set != null;
 
     public bool Equals(Cell other)
     {
@@ -33,5 +37,29 @@ public class Cell : IEquatable<Cell>
     public override int GetHashCode()
     {
         return HashCode.Combine(row, column);
+    }
+
+    public int CompareTo(Cell other)
+    {
+        if (ReferenceEquals(this, other)) return 0;
+        if (other is null) return 1;
+        
+        var rowComparison = row.CompareTo(other.row);
+        
+        if (rowComparison != 0) return rowComparison;
+        
+        return column.CompareTo(other.column);
+    }
+    
+    public void AssignSet(SetCells set)
+    {
+        this.set = set;
+        set.nCells++;
+    }
+
+    public void DeAssingSet()
+    {
+        set.nCells--;
+        set = null;
     }
 }
