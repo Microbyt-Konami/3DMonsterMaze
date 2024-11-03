@@ -54,12 +54,12 @@ public class Cell : IEquatable<Cell>, IComparable<Cell>
     public void AssignSet(SetCells set)
     {
         this.set = set;
-        set.nCells++;
+        set.NCells++;
     }
 
     public void DeAssingSet()
     {
-        set.nCells--;
+        set.NCells--;
         set = null;
     }
 }
