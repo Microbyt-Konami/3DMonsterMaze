@@ -64,7 +64,7 @@ public class MazeGenerator : MonoBehaviour
     /// </summary>
     private void InitVars()
     {
-        _setworks = new SetCellsCollection();
+        _setworks = new SetCellsCollection { RandomUsedCellsCoRoutine = RandomUsedCellsCoRoutine };
         SetCells = new int[rows * columns];
         _idxRowCurrent = 0;
 
@@ -76,6 +76,30 @@ public class MazeGenerator : MonoBehaviour
     {
         _setworks.Dispose();
         _setworks = null;
+    }
+
+    private IEnumerator<bool> RandomUsedCellsCoRoutine(SetCells set)
+    {
+        var random = Random.Range(1, set.NCells);
+        int i = 0, count = 0;
+
+        for (; i < set.NCells; i++)
+        {
+            if (i - count + 1 >= set.NCells)
+                break;
+
+            if (count == random)
+                yield break;
+
+            var value = Random.value >= 0.5f;
+
+            yield return value;
+
+            if (value)
+                ++count;
+        }
+        for (; i < set.NCells && count < random; i++)
+            yield return true;
     }
 
     private IEnumerator ProcessRowCoRoutine()
@@ -108,35 +132,25 @@ public class MazeGenerator : MonoBehaviour
         /* Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.
          * Las celdas de la siguiente fila a las que nos conectamos deben asignarse al conjunto de la celda que está encima de ellas
          */
-        bool done;
         int nextIdx = _idxRowCurrent + columns;
 
         // Reseteamos valores used
         _setworks.SetSetsToNotUsed();
 
         // Primero hacemos las conexiones horizontales aleatorias, de cada conjunto al menos una se tiene que conectar
-        do
+        for (var i = 0; i < columns; i++)
         {
-            done = true;
-            for (var i = 0; i < columns; i++)
+            var setId = SetCells[_idxRowCurrent + i];
+
+            if (Random.value >= _setworks.RandomUsed(setId))
             {
-                var setId = SetCells[_idxRowCurrent + i];
-
-                if (_setworks.IsSetUsed(setId))
-                    continue;
-
-                done = false;
-                if (_setworks.IsSetOneCell(setId) || Random.value > .5f)
-                {
-                    _setworks.SetSetUsed(setId);
-                    SetCells[nextIdx + i] = setId;
-                }
+                _setworks.SetSetUsed(setId);
+                SetCells[nextIdx + i] = setId;
             }
+        }
 
-            _setworks.UpdateSetsUseds();
+        _setworks.UpdateSetsUseds();
 
-            yield return null;
-        } while (!done);
 
         // Las celdas de la siguiente filas no conectadas se asignar cada una a un nuevo conjunto
         for (var i = 0; i < columns; i++)
@@ -159,7 +173,7 @@ public class MazeGenerator : MonoBehaviour
         int lastSetId = 0;
 
         for (var i = 0; i < columns; i++)
-            if (SetCells[i + _idxRowCurrent] != SetCells[i + lastSetId])
+            if (SetCells[_idxRowCurrent + i] != SetCells[idxRowPrev + i])
             {
                 if (lastSetId == 0)
                     lastSetId = SetCells[i + _idxRowCurrent];

@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Random = UnityEngine.Random;
+
+public delegate IEnumerator<bool> RandomUsedCellsCoRoutineHandler(SetCells set);
 
 public class SetCellsCollection : IDisposable
 {
+    public RandomUsedCellsCoRoutineHandler RandomUsedCellsCoRoutine { get; set; }
+
     private int _lastSetId;
     private Dictionary<int, SetCells> _sets = new Dictionary<int, SetCells>();
     private Dictionary<int, SetCells> _setRemoves = new Dictionary<int, SetCells>();
@@ -12,8 +17,10 @@ public class SetCellsCollection : IDisposable
     public int AddNewSet()
     {
         int setid = NextSetId();
-        var set = new SetCells();
+        var set = new SetCells { NCells = 1 };
 
+        if (RandomUsedCellsCoRoutine != null)
+            set.RandomUsedCellsEnumerator = RandomUsedCellsCoRoutine(set);
         _setRemoves.Remove(setid);
         _sets[setid] = set;
 
@@ -30,6 +37,7 @@ public class SetCellsCollection : IDisposable
             {
                 _setRemoves.Remove(setId);
                 _setCellsQuery.Enqueue(setId);
+                set.Dispose();
             }
             else
                 _setRemoves[setId] = set;
@@ -52,7 +60,11 @@ public class SetCellsCollection : IDisposable
     public void SetSetsToNotUsed()
     {
         foreach (var set in _sets.Values)
+        {
             set.Used = set.UsedTmp = false;
+            set.NCellsRandom = Random.Range(0, set.NCells);
+            set.NCellsUsed = 0;
+        }
     }
 
     public void UpdateSetsUseds()
@@ -68,11 +80,13 @@ public class SetCellsCollection : IDisposable
         {
             set.UsedTmp = true;
             set.Used = false;
+            set.NCellsUsed++;
         }
     }
 
     public bool IsSetUsed(int setId) => _sets.TryGetValue(setId, out var set) && set.Used;
     public bool IsSetOneCell(int setId) => _sets.TryGetValue(setId, out var set) && set.NCells == 1;
+    public float RandomUsed(int setId) => _sets.TryGetValue(setId, out var set) ? set.RandomUsed() : 0.5f;
 
     private int NextSetId() => (_setCellsQuery.TryDequeue(out var setCells)) ? setCells : ++_lastSetId;
 
@@ -83,9 +97,9 @@ public class SetCellsCollection : IDisposable
             if (disposing)
             {
                 // TODO: eliminar el estado administrado (objetos administrados)
-                _sets.Clear();
-                _setCellsQuery.Clear();
-                _setRemoves.Clear();
+                _sets?.Clear();
+                _setCellsQuery?.Clear();
+                _setRemoves?.Clear();
             }
 
             // TODO: liberar los recursos no administrados (objetos no administrados) y reemplazar el finalizador
@@ -94,6 +108,7 @@ public class SetCellsCollection : IDisposable
             _sets = null;
             _setCellsQuery = null;
             _setRemoves = null;
+
             disposedValue = true;
         }
     }
