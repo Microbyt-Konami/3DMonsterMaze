@@ -10,13 +10,6 @@ public class SetCells : IDisposable
 
     public int NCells { get; set; }
     public IEnumerator<bool> RandomUsedCellsEnumerator { get; set; }
-    public bool Used { get; set; }
-    public bool UsedTmp { get; set; }
-    public int NCellsRandom { get; set; }
-    public int NCellsUsed { get; set; }
-    public int IdxCellsRandom { get; set; }
-
-    public float RandomUsed() => NCellsUsed > 0 ? 0.5f : (NCells - NCellsRandom) / NCells;
 
     protected virtual void Dispose(bool disposing)
     {
@@ -37,16 +30,16 @@ public class SetCells : IDisposable
         }
     }
 
-    // // TODO: reemplazar el finalizador solo si "Dispose(bool disposing)" tiene código para liberar los recursos no administrados
+    // // TODO: reemplazar el finalizador solo si "Dispose(bool disposing)" tiene cï¿½digo para liberar los recursos no administrados
     // ~SetCells()
     // {
-    //     // No cambie este código. Coloque el código de limpieza en el método "Dispose(bool disposing)".
+    //     // No cambie este cï¿½digo. Coloque el cï¿½digo de limpieza en el mï¿½todo "Dispose(bool disposing)".
     //     Dispose(disposing: false);
     // }
 
     public void Dispose()
     {
-        // No cambie este código. Coloque el código de limpieza en el método "Dispose(bool disposing)".
+        // No cambie este cï¿½digo. Coloque el cï¿½digo de limpieza en el mï¿½todo "Dispose(bool disposing)".
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }

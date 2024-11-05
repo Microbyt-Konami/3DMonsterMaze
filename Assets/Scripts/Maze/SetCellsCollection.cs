@@ -6,8 +6,6 @@ public delegate IEnumerator<bool> RandomUsedCellsCoRoutineHandler(SetCells set);
 
 public class SetCellsCollection : IDisposable
 {
-    public RandomUsedCellsCoRoutineHandler RandomUsedCellsCoRoutine { get; set; }
-
     private int _lastSetId;
     private Dictionary<int, SetCells> _sets = new Dictionary<int, SetCells>();
     private Dictionary<int, SetCells> _setRemoves = new Dictionary<int, SetCells>();
@@ -19,8 +17,6 @@ public class SetCellsCollection : IDisposable
         int setid = NextSetId();
         var set = new SetCells { NCells = 1 };
 
-        if (RandomUsedCellsCoRoutine != null)
-            set.RandomUsedCellsEnumerator = RandomUsedCellsCoRoutine(set);
         _setRemoves.Remove(setid);
         _sets[setid] = set;
 
@@ -41,6 +37,7 @@ public class SetCellsCollection : IDisposable
             }
             else
                 _setRemoves[setId] = set;
+
             _sets.Remove(setId);
         }
     }
@@ -57,36 +54,28 @@ public class SetCellsCollection : IDisposable
             set.NCells--;
     }
 
-    public void SetSetsToNotUsed()
+    public void AsignSetsRandomUsed(RandomUsedCellsCoRoutineHandler randomUsedCellsCoRoutine)
+    {
+        foreach (var set in _sets.Values)
+            set.RandomUsedCellsEnumerator = randomUsedCellsCoRoutine(set);
+    }
+
+    public bool RandomUsed(int setId)
+        => (!_sets.TryGetValue(setId, out var set) || set.RandomUsedCellsEnumerator == null)
+            ? Random.value >= 0.5f
+            : set.RandomUsedCellsEnumerator.MoveNext() && set.RandomUsedCellsEnumerator.Current;
+
+    public void FreeSetsRandomUsed()
     {
         foreach (var set in _sets.Values)
         {
-            set.Used = set.UsedTmp = false;
-            set.NCellsRandom = Random.Range(0, set.NCells);
-            set.NCellsUsed = 0;
+            if (set.RandomUsedCellsEnumerator != null)
+            {
+                set.RandomUsedCellsEnumerator.Dispose();
+                set.RandomUsedCellsEnumerator = null;
+            }
         }
     }
-
-    public void UpdateSetsUseds()
-    {
-        foreach (var set in _sets.Values)
-            if (!set.Used && set.UsedTmp)
-                set.Used = set.UsedTmp;
-    }
-
-    public void SetSetUsed(int setId)
-    {
-        if (_sets.TryGetValue(setId, out var set))
-        {
-            set.UsedTmp = true;
-            set.Used = false;
-            set.NCellsUsed++;
-        }
-    }
-
-    public bool IsSetUsed(int setId) => _sets.TryGetValue(setId, out var set) && set.Used;
-    public bool IsSetOneCell(int setId) => _sets.TryGetValue(setId, out var set) && set.NCells == 1;
-    public float RandomUsed(int setId) => _sets.TryGetValue(setId, out var set) ? set.RandomUsed() : 0.5f;
 
     private int NextSetId() => (_setCellsQuery.TryDequeue(out var setCells)) ? setCells : ++_lastSetId;
 
@@ -113,16 +102,16 @@ public class SetCellsCollection : IDisposable
         }
     }
 
-    // // TODO: reemplazar el finalizador solo si "Dispose(bool disposing)" tiene código para liberar los recursos no administrados
+    // // TODO: reemplazar el finalizador solo si "Dispose(bool disposing)" tiene cï¿½digo para liberar los recursos no administrados
     // ~SetCellsCollection()
     // {
-    //     // No cambie este código. Coloque el código de limpieza en el método "Dispose(bool disposing)".
+    //     // No cambie este cï¿½digo. Coloque el cï¿½digo de limpieza en el mï¿½todo "Dispose(bool disposing)".
     //     Dispose(disposing: false);
     // }
 
     public void Dispose()
     {
-        // No cambie este código. Coloque el código de limpieza en el método "Dispose(bool disposing)".
+        // No cambie este cï¿½digo. Coloque el cï¿½digo de limpieza en el mï¿½todo "Dispose(bool disposing)".
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
