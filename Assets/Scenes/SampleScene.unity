@@ -1010,7 +1010,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 10
   columns: 10
-  <SetCells>k__BackingField: 
+  <SetCells>k__BackingField: []
   <MazeGenerated>k__BackingField: 0
 --- !u!4 &927761874
 Transform:
@@ -6208,7 +6208,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1308626520
 Transform:
   m_ObjectHideFlags: 0

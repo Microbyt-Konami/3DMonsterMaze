@@ -10,6 +10,18 @@ public enum CellNeighbor
     West = 0x8
 }
 
-public class Cell : MonoBehaviour
+[Flags]
+public enum CellWall
 {
+    None = 0,
+    Right = 0x1,
+    Bottom = 0x2,
+    Default = Right | Bottom
+}
+
+[Serializable]
+public class Cell
+{
+    public int SetId { get; set; }
+    public CellWall Walls { get; set; }
 }

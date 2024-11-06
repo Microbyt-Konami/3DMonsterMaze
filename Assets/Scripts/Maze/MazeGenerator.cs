@@ -7,7 +7,7 @@ using UnityEngine;
 public class MazeGenerator : MonoBehaviour
 {
     public int rows = 10, columns = 10;
-    [field: SerializeField] public int[] SetCells { get; private set; }
+    [field: SerializeField] public Cell[] SetCells { get; private set; }
     [field: SerializeField] public bool MazeGenerated { get; private set; }
 
     private int _idxRowCurrent;
@@ -65,11 +65,16 @@ public class MazeGenerator : MonoBehaviour
     private void InitVars()
     {
         _setworks = new SetCellsCollection();
-        SetCells = new int[rows * columns];
+        SetCells = new Cell[rows * columns];
         _idxRowCurrent = 0;
 
+        // Inicializo las primera file
         for (var col = 0; col < columns; col++)
-            SetCells[col] = _setworks.AddNewSet();
+            SetCells[col] = new Cell { SetId = _setworks.AddNewSet(), Walls = CellWall.None };
+
+        // Inicializo las otras filas
+        for (var i = columns; i < SetCells.Length; i++)
+            SetCells[i] = new Cell { SetId = 0, Walls = CellWall.None };
     }
 
     private void FreeVarsTemps()
@@ -122,7 +127,7 @@ public class MazeGenerator : MonoBehaviour
         for (var col = 0; col < lastCol; col++)
         {
             if (Random.value > 0.5f)
-                JoinRowCells(col, col + 1);
+                JoinAdjacentCells(col);
         }
 
         yield return null;
@@ -141,19 +146,19 @@ public class MazeGenerator : MonoBehaviour
         // Primero hacemos las conexiones horizontales aleatorias, de cada conjunto al menos una se tiene que conectar
         for (var i = 0; i < columns; i++)
         {
-            var setId = SetCells[_idxRowCurrent + i];
+            var setId = SetCells[_idxRowCurrent + i].SetId;
 
             if (_setworks.RandomUsed(setId))
-                SetCells[nextIdx + i] = setId;
+                JoinBottomCell(i);
         }
 
         // Las celdas de la siguiente filas no conectadas se asignar cada una a un nuevo conjunto
         for (var i = 0; i < columns; i++)
         {
-            if (SetCells[nextIdx + i] == 0)
+            if (SetCells[nextIdx + i].SetId == 0)
             {
-                _setworks.RemoveCellToSet(SetCells[_idxRowCurrent + i]);
-                SetCells[nextIdx + i] = _setworks.AddNewSet();
+                _setworks.RemoveCellToSet(SetCells[_idxRowCurrent + i].SetId);
+                SetCells[nextIdx + i].SetId = _setworks.AddNewSet();
             }
         }
 
@@ -164,33 +169,45 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator ProcessLastRowCoRoutine()
     {
-        // Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
+        // Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior 
 
-        int idxRowPrev = _idxRowCurrent - columns;
-        int lastSetId = 0;
+        int idxRowPrev = _idxRowCurrent - 2 * columns;
+        int lastSetId = SetCells[_idxRowCurrent - columns].SetId;
 
         for (var i = 0; i < columns; i++)
-            if (SetCells[_idxRowCurrent + i] != SetCells[idxRowPrev + i])
-            {
-                if (lastSetId == 0)
-                    lastSetId = SetCells[i + _idxRowCurrent];
+        {
+            var cellPrevWalls = idxRowPrev >= 0 ? SetCells[idxRowPrev + i].Walls : CellWall.None;
+            var cell = SetCells[_idxRowCurrent + i];
 
-                SetCells[i + _idxRowCurrent] = lastSetId;
-            }
+            cell.SetId = lastSetId;
+            cell.Walls = CellWall.Right;
+            if (cellPrevWalls.HasFlag(CellWall.Bottom))
+                cell.Walls |= CellWall.Bottom;
+        }
 
         yield return null;
     }
 
-    private void JoinRowCells(int col1, int col2)
+    private void JoinAdjacentCells(int col)
     {
-        var set1 = SetCells[col1 + _idxRowCurrent];
-        var set2 = SetCells[col2 + _idxRowCurrent];
+        var set1 = SetCells[col + _idxRowCurrent];
+        var set2 = SetCells[col + 1 + _idxRowCurrent];
 
-        if (set1 == set2)
+        set1.Walls |= CellWall.Right;
+        if (set1.SetId == set2.SetId)
             return;
 
-        _setworks.AddCellToSet(set1);
-        _setworks.RemoveSet(set2);
-        SetCells[col2 + _idxRowCurrent] = set1;
+        _setworks.AddCellToSet(set1.SetId);
+        _setworks.RemoveSet(set2.SetId);
+        set2.SetId = set1.SetId;
+    }
+
+    private void JoinBottomCell(int col)
+    {
+        var set1 = SetCells[col + _idxRowCurrent];
+        var set2 = SetCells[col + _idxRowCurrent + columns];
+
+        set1.Walls |= CellWall.Bottom;
+        set2.SetId = set1.SetId;
     }
 }
