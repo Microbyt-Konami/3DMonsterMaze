@@ -23,12 +23,36 @@ public class MazeGenerator : MonoBehaviour
         int idx = 0;
         StringBuilder sb = new StringBuilder();
 
+        for (int j = 0 - 1; j < columns; j++)
+            sb.Append("---");
+        sb.AppendLine();
         for (int i = 0; i < rows; i++)
         {
+            sb.Append("|");
+            bool wasWallRight = false;
+
             for (int j = 0; j < columns; j++)
-                sb.Append($"{SetCells[idx++]:00} ");
-            sb.AppendLine();
+            {
+                var cell = SetCells[idx + j];
+                wasWallRight = cell.isWallRight;
+
+                sb.Append($"{cell.SetId:00}{(wasWallRight ? "|" : " ")}");
+            }
+
+            sb.AppendLine((!wasWallRight) ? "|" : "");
+
+            if (i < rows - 1)
+            {
+                sb.Append("|");
+                for (int j = 0; j < columns; j++)
+                    sb.Append(SetCells[idx++].isWallBottom ? "---" : "   ");
+                sb.AppendLine("|");
+            }
         }
+
+        for (int j = 0 - 2; j < columns; j++)
+            sb.Append("---");
+        sb.AppendLine();
 
         Debug.Log(sb.ToString());
     }
@@ -70,11 +94,11 @@ public class MazeGenerator : MonoBehaviour
 
         // Inicializo las primera file
         for (var col = 0; col < columns; col++)
-            SetCells[col] = new Cell { SetId = _setworks.AddNewSet(), Walls = CellWall.None };
+            SetCells[col] = new Cell { SetId = _setworks.AddNewSet(), Connects = CellConnect.None };
 
         // Inicializo las otras filas
         for (var i = columns; i < SetCells.Length; i++)
-            SetCells[i] = new Cell { SetId = 0, Walls = CellWall.None };
+            SetCells[i] = new Cell { SetId = 0, Connects = CellConnect.None };
     }
 
     private void FreeVarsTemps()
@@ -171,18 +195,29 @@ public class MazeGenerator : MonoBehaviour
     {
         // Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior 
 
-        int idxRowPrev = _idxRowCurrent - 2 * columns;
-        int lastSetId = SetCells[_idxRowCurrent - columns].SetId;
+        int idxRowPrevPrev = _idxRowCurrent - 2 * columns;
+        int idxRowPrev = idxRowPrevPrev + columns;
+        int lastSetId = SetCells[idxRowPrev].SetId;
+
+        if (idxRowPrevPrev >= 0)
+        {
+            for (var i = 0; i < columns; i++)
+                if (SetCells[idxRowPrevPrev + i].Connects.HasFlag(CellConnect.Bottom))
+                {
+                    lastSetId = SetCells[idxRowPrev + i].SetId;
+                    break;
+                }
+        }
 
         for (var i = 0; i < columns; i++)
         {
-            var cellPrevWalls = idxRowPrev >= 0 ? SetCells[idxRowPrev + i].Walls : CellWall.None;
+            var cellPrevWalls = idxRowPrevPrev >= 0 ? SetCells[idxRowPrevPrev + i].Connects : CellConnect.None;
             var cell = SetCells[_idxRowCurrent + i];
 
             cell.SetId = lastSetId;
-            cell.Walls = CellWall.Right;
-            if (cellPrevWalls.HasFlag(CellWall.Bottom))
-                cell.Walls |= CellWall.Bottom;
+            cell.Connects = CellConnect.Right;
+            if (cellPrevWalls.HasFlag(CellConnect.Bottom))
+                SetCells[idxRowPrev + i].Connects |= CellConnect.Bottom;
         }
 
         yield return null;
@@ -193,7 +228,7 @@ public class MazeGenerator : MonoBehaviour
         var set1 = SetCells[col + _idxRowCurrent];
         var set2 = SetCells[col + 1 + _idxRowCurrent];
 
-        set1.Walls |= CellWall.Right;
+        set1.Connects |= CellConnect.Right;
         if (set1.SetId == set2.SetId)
             return;
 
@@ -207,7 +242,7 @@ public class MazeGenerator : MonoBehaviour
         var set1 = SetCells[col + _idxRowCurrent];
         var set2 = SetCells[col + _idxRowCurrent + columns];
 
-        set1.Walls |= CellWall.Bottom;
+        set1.Connects |= CellConnect.Bottom;
         set2.SetId = set1.SetId;
     }
 }

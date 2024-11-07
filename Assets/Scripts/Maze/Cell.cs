@@ -11,7 +11,7 @@ public enum CellNeighbor
 }
 
 [Flags]
-public enum CellWall
+public enum CellConnect
 {
     None = 0,
     Right = 0x1,
@@ -23,5 +23,8 @@ public enum CellWall
 public class Cell
 {
     public int SetId { get; set; }
-    public CellWall Walls { get; set; }
+    public CellConnect Connects { get; set; }
+
+    public bool isWallRight => !Connects.HasFlag(CellConnect.Right);
+    public bool isWallBottom => !Connects.HasFlag(CellConnect.Bottom);
 }
