@@ -31,11 +31,11 @@ public struct ConnectCellsToWallsJob : IJob
 
                 if (!cellConnect.HasFlag(CellConnect.Right) || j == Columns - 1)
                     walls |= CellWall.East;
-                if (i == 0 || !Cells[idx - 1].HasFlag(CellConnect.Right))
+                if (j == 0 || !Cells[idx - 1].HasFlag(CellConnect.Right))
                     walls |= CellWall.West;
                 if (!cellConnect.HasFlag(CellConnect.Bottom) || i == Rows - 1)
                     walls |= CellWall.South;
-                if (j == 0 || !Cells[idx - Columns].HasFlag(CellConnect.Bottom))
+                if (i == 0 || !Cells[idx - Columns].HasFlag(CellConnect.Bottom))
                     walls |= CellWall.North;
 
                 Walls[idx++] = walls;

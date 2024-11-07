@@ -10,12 +10,14 @@ public class MazeGenerator : MonoBehaviour
 {
     public int rows = 10, columns = 10;
     public bool log;
-    public bool MazeGenerated { get; private set; }
+    [field: SerializeField] public bool MazeGenerated { get; private set; }
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
+    private InOutMazeJob _inOutMazeJob;
     private JobHandle _mazeGeneratorJobHandle;
     private JobHandle _wallsJobHandle;
+    private JobHandle _inOutMazeJobHandle;
 
     public void GenerateMaze()
     {
@@ -36,18 +38,27 @@ public class MazeGenerator : MonoBehaviour
             Cells = _ellerJob.Cells,
             Walls = new NativeArray<CellWall>(rows * columns, Allocator.TempJob),
         };
+        _inOutMazeJob = new InOutMazeJob
+        {
+            Rows = rows,
+            Columns = columns,
+            Walls = _wallsJob.Walls,
+        };
 
         _mazeGeneratorJobHandle = _ellerJob.Schedule();
         _wallsJobHandle = _wallsJob.Schedule(_mazeGeneratorJobHandle);
+        _inOutMazeJobHandle = _inOutMazeJob.Schedule(_wallsJobHandle);
 
         StartCoroutine(WaitGenerateMazeCoRoutine());
     }
 
     private IEnumerator WaitGenerateMazeCoRoutine()
     {
-        yield return new WaitUntil(() => _wallsJobHandle.IsCompleted);
+        var handle = _inOutMazeJobHandle;
 
-        _wallsJobHandle.Complete();
+        yield return new WaitUntil(() => handle.IsCompleted);
+
+        handle.Complete();
         MazeGenerated = true;
     }
 }
