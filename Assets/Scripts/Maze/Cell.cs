@@ -10,15 +10,6 @@ public enum CellNeighbor
     West = 0x8
 }
 
-[Flags]
-public enum CellConnect
-{
-    None = 0,
-    Right = 0x1,
-    Bottom = 0x2,
-    Default = Right | Bottom
-}
-
 [Serializable]
 public class Cell
 {
