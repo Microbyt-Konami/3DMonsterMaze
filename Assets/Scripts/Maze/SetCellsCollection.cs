@@ -15,8 +15,9 @@ public class SetCellsCollection : IDisposable
     public int AddNewSet()
     {
         int setid = NextSetId();
-        var set = new SetCells { NCells = 1 };
+        var set = new SetCells();
 
+        set.AddCell();
         _setRemoves.Remove(setid);
         _sets[setid] = set;
 
@@ -29,7 +30,8 @@ public class SetCellsCollection : IDisposable
             _setCellsQuery.Enqueue(setId);
         else
         {
-            if (--set.NCells == 0)
+            set.RemoveCell();
+            if (set.NCells == 0)
             {
                 _setRemoves.Remove(setId);
                 _setCellsQuery.Enqueue(setId);
@@ -45,13 +47,13 @@ public class SetCellsCollection : IDisposable
     public void AddCellToSet(int setId)
     {
         if (_sets.TryGetValue(setId, out var set))
-            set.NCells++;
+            set.AddCell();
     }
 
     public void RemoveCellToSet(int setId)
     {
         if (_sets.TryGetValue(setId, out var set))
-            set.NCells--;
+            set.RemoveCell();
     }
 
     public void AsignSetsRandomUsed(RandomUsedCellsCoRoutineHandler randomUsedCellsCoRoutine)

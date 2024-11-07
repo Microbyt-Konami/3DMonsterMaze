@@ -3,13 +3,31 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
-[DebuggerDisplay("NCells = {NCells}, NCellsRandom = {NCellsRandom}, NCellsUsed = {NCellsUsed}")]
+[DebuggerDisplay("NCells = {NWorkCells}, NCellsRandom = {NCellsRandom}, NCellsUsed = {NCellsUsed}")]
 public class SetCells : IDisposable
 {
     private bool disposedValue;
 
     public int NCells { get; set; }
+    public int NWorkCells { get; set; }
+    public int NRandomCells { get; set; }
+    public int NUsedsCells { get; set; }
     public IEnumerator<bool> RandomUsedCellsEnumerator { get; set; }
+
+    public bool IsSetRandomDone() => NUsedsCells >= NRandomCells;
+    public int NCellsRemains => NRandomCells - NUsedsCells;
+
+    public void AddCell()
+    {
+        NWorkCells++;
+        NCells++;
+    }
+
+    public void RemoveCell()
+    {
+        NWorkCells--;
+        NCells--;
+    }
 
     protected virtual void Dispose(bool disposing)
     {

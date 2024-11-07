@@ -2,23 +2,53 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
     public int rows = 10, columns = 10;
+    public bool log;
     [field: SerializeField] public Cell[] SetCells { get; private set; }
     [field: SerializeField] public bool MazeGenerated { get; private set; }
 
+    private int _rowCurrent;
     private int _idxRowCurrent;
     private SetCellsCollection _setworks;
+    private EllerJob _ellerJob;
+    private JobHandle _mazeGeneratorJobHandle;
 
-    void Start()
+    public void GenerateMaze()
     {
-        GenerateMaze();
+        MazeGenerated = false;
+
+        _ellerJob = new EllerJob
+        {
+            seed = (uint)Random.Range(int.MinValue, int.MaxValue),
+            log = log,
+            rows = rows,
+            columns = columns,
+            cells = new NativeArray<CellConnect>(rows * columns, Allocator.TempJob),
+        };
+
+        _mazeGeneratorJobHandle = _ellerJob.Schedule();
+
+        StartCoroutine(WaitGenerateMazeCoRoutine());
     }
 
-    private void LogSetCells()
+    private IEnumerator WaitGenerateMazeCoRoutine()
+    {
+        yield return new WaitUntil(() => _mazeGeneratorJobHandle.IsCompleted);
+
+        _mazeGeneratorJobHandle.Complete();
+        MazeGenerated = true;
+    }
+
+    private void LogAllSetCells() => LogSetCells(rows);
+    private void LogCurrentSetCells() => LogSetCells(_rowCurrent + 1);
+
+    private void LogSetCells(int nrows)
     {
         int idx = 0;
         StringBuilder sb = new StringBuilder();
@@ -26,7 +56,7 @@ public class MazeGenerator : MonoBehaviour
         for (int j = 0 - 1; j < columns; j++)
             sb.Append("---");
         sb.AppendLine();
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < nrows; i++)
         {
             sb.Append("|");
             bool wasWallRight = false;
@@ -57,7 +87,7 @@ public class MazeGenerator : MonoBehaviour
         Debug.Log(sb.ToString());
     }
 
-    private void GenerateMaze()
+    private void GenerateMaze2()
     {
         StartCoroutine(GenerateMazeCoRoutine());
     }
@@ -71,15 +101,15 @@ public class MazeGenerator : MonoBehaviour
         // por cada fila menos la ultima
         var lastIdxRow = SetCells.Length - columns;
 
-        _idxRowCurrent = 0;
-        for (; _idxRowCurrent < lastIdxRow; _idxRowCurrent += columns)
+        _idxRowCurrent = _rowCurrent = 0;
+        for (; _idxRowCurrent < lastIdxRow; _idxRowCurrent += columns, _rowCurrent++)
             yield return ProcessRowCoRoutine();
 
         // Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
         yield return ProcessLastRowCoRoutine();
 
         FreeVarsTemps();
-        LogSetCells();
+        LogAllSetCells();
         MazeGenerated = true;
     }
 
@@ -109,27 +139,20 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator<bool> RandomUsedCellsCoRoutine(SetCells set)
     {
-        var random = Random.Range(1, set.NCells);
-        int i = 0, count = 0;
-
-        for (; i < set.NCells; i++)
+        set.NUsedsCells = 0;
+        set.NRandomCells = Random.Range(1, set.NWorkCells);
+        for (int i = set.NWorkCells; i > 0; i--)
         {
-            if (i - count + 1 >= set.NCells)
-                break;
-
-            if (count == random)
+            if (set.IsSetRandomDone())
                 yield break;
 
-            var value = Random.value >= 0.5f;
+            var value = i <= set.NCellsRemains || Random.value >= 0.5f;
 
             yield return value;
 
             if (value)
-                ++count;
+                ++set.NUsedsCells;
         }
-
-        for (; i < set.NCells && count < random; i++)
-            yield return true;
     }
 
     private IEnumerator ProcessRowCoRoutine()
@@ -153,6 +176,9 @@ public class MazeGenerator : MonoBehaviour
             if (Random.value > 0.5f)
                 JoinAdjacentCells(col);
         }
+
+        Debug.Log("en la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no");
+        LogCurrentSetCells();
 
         yield return null;
     }
@@ -188,6 +214,9 @@ public class MazeGenerator : MonoBehaviour
 
         _setworks.FreeSetsRandomUsed();
 
+        Debug.Log("Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.");
+        LogCurrentSetCells();
+
         yield return null;
     }
 
@@ -216,6 +245,7 @@ public class MazeGenerator : MonoBehaviour
 
             cell.SetId = lastSetId;
             cell.Connects = CellConnect.Right;
+            _setworks.AddCellToSet(lastSetId);
             if (cellPrevWalls.HasFlag(CellConnect.Bottom))
                 SetCells[idxRowPrev + i].Connects |= CellConnect.Bottom;
         }
@@ -229,10 +259,11 @@ public class MazeGenerator : MonoBehaviour
         var set2 = SetCells[col + 1 + _idxRowCurrent];
 
         set1.Connects |= CellConnect.Right;
+        _setworks.AddCellToSet(set1.SetId);
+
         if (set1.SetId == set2.SetId)
             return;
 
-        _setworks.AddCellToSet(set1.SetId);
         _setworks.RemoveSet(set2.SetId);
         set2.SetId = set1.SetId;
     }
@@ -244,5 +275,6 @@ public class MazeGenerator : MonoBehaviour
 
         set1.Connects |= CellConnect.Bottom;
         set2.SetId = set1.SetId;
+        _setworks.AddCellToSet(set1.SetId);
     }
 }
