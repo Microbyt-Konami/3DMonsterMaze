@@ -16,23 +16,23 @@ public enum CellConnect
 
 public struct EllerJob : IJob
 {
-    public uint seed;
-    public int rows, columns;
-    public NativeArray<CellConnect> cells;
-    public bool log;
+    public uint Seed;
+    public int Rows, Columns;
+    public NativeArray<CellConnect> Cells;
+    public bool Log;
 
-    private Random random;
-    private int idxRowCurrentIni;
-    private int idxRowCurrentEnd;
+    private Random _random;
+    private int _idxRowCurrentIni;
+    private int _idxRowCurrentEnd;
 
     public void Execute()
     {
-        int idxLastRow = (rows - 1) * columns;
-        random = new Random(seed);
+        int idxLastRow = (Rows - 1) * Columns;
+        _random = new Random(Seed);
         InitRow1();
-        for (idxRowCurrentIni = 0; idxRowCurrentIni < idxLastRow; idxRowCurrentIni += columns)
+        for (_idxRowCurrentIni = 0; _idxRowCurrentIni < idxLastRow; _idxRowCurrentIni += Columns)
         {
-            idxRowCurrentEnd = idxRowCurrentIni + columns - 1;
+            _idxRowCurrentEnd = _idxRowCurrentIni + Columns - 1;
             JoinRowHCellsRandom();
             JoinRowVCellsRandom();
         }
@@ -43,31 +43,31 @@ public struct EllerJob : IJob
     private void InitRow1()
     {
         // Lo primero que se tiene que hacer cada columna de la primera fila tiene su conjunto propio
-        for (int i = 0; i < columns; i++)
-            cells[i] |= CellConnect.None;
+        for (int i = 0; i < Columns; i++)
+            Cells[i] |= CellConnect.None;
     }
 
     private void JoinRowHCellsRandom()
     {
         // En la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no
-        for (int i = idxRowCurrentIni; i <= idxRowCurrentEnd; i++)
-            if (random.NextBool())
-                cells[i] |= CellConnect.Right;
+        for (int i = _idxRowCurrentIni; i <= _idxRowCurrentEnd; i++)
+            if (_random.NextBool())
+                Cells[i] |= CellConnect.Right;
 
-        if (log)
+        if (Log)
             LogSetCells("En la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no");
     }
 
     private void JoinRowVCellsRandom()
     {
         // Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.
-        for (int i = idxRowCurrentIni; i <= idxRowCurrentEnd; i++)
+        for (int i = _idxRowCurrentIni; i <= _idxRowCurrentEnd; i++)
         {
             int idxFin = GetCellEndSet(i);
             float range = 0.5f;
 
             if (i == idxFin)
-                cells[i] |= CellConnect.Bottom;
+                Cells[i] |= CellConnect.Bottom;
             else
             {
                 bool joinDone = false;
@@ -75,9 +75,9 @@ public struct EllerJob : IJob
                 {
                     for (var j = i; j <= idxFin; j++)
                     {
-                        if (random.NextFloat() >= range)
+                        if (_random.NextFloat() >= range)
                         {
-                            cells[j] |= CellConnect.Bottom;
+                            Cells[j] |= CellConnect.Bottom;
                             joinDone = true;
                         }
                     }
@@ -89,41 +89,41 @@ public struct EllerJob : IJob
             }
         }
 
-        if (log)
+        if (Log)
             LogSetCells("Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.");
     }
 
     void JoinLastRowCells()
     {
         // Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior
-        int idxRowPrev = idxRowCurrentIni - columns;
-        int idxRowPrevPrev = idxRowPrev - columns;
+        int idxRowPrev = _idxRowCurrentIni - Columns;
+        int idxRowPrevPrev = idxRowPrev - Columns;
 
         if (idxRowPrev >= 0 && idxRowPrevPrev >= 0)
         {
-            for (; idxRowPrev < idxRowCurrentIni; idxRowPrev++, idxRowPrevPrev++)
-                if (cells[idxRowPrevPrev].HasFlag(CellConnect.Bottom))
-                    cells[idxRowPrev] |= CellConnect.Bottom;
+            for (; idxRowPrev < _idxRowCurrentIni; idxRowPrev++, idxRowPrevPrev++)
+                if (Cells[idxRowPrevPrev].HasFlag(CellConnect.Bottom))
+                    Cells[idxRowPrev] |= CellConnect.Bottom;
         }
 
-        for (var i = idxRowCurrentIni; i < idxRowCurrentEnd; i++)
-            cells[i] |= CellConnect.Right;
+        for (var i = _idxRowCurrentIni; i < _idxRowCurrentEnd; i++)
+            Cells[i] |= CellConnect.Right;
 
-        if (log)
+        if (Log)
             LogSetCells(
                 "Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior.");
     }
 
     private int GetCellEndSet(int idxRowCurrent)
     {
-        if (idxRowCurrent == idxRowCurrentEnd)
-            return idxRowCurrentEnd;
+        if (idxRowCurrent == _idxRowCurrentEnd)
+            return _idxRowCurrentEnd;
 
-        for (var i = idxRowCurrent + 1; i < idxRowCurrentEnd; i++)
-            if (!cells[i].HasFlag(CellConnect.Right))
+        for (var i = idxRowCurrent + 1; i < _idxRowCurrentEnd; i++)
+            if (!Cells[i].HasFlag(CellConnect.Right))
                 return i - 1;
 
-        return idxRowCurrentEnd;
+        return _idxRowCurrentEnd;
     }
 
     private void LogSetCells(string text)
@@ -135,9 +135,9 @@ public struct EllerJob : IJob
         sb.AppendLine(text.ToString());
 
         int idx = 0;
-        int nrows = (idxRowCurrentEnd + 1) / columns;
+        int nrows = (_idxRowCurrentEnd + 1) / Columns;
 
-        for (int j = 0; j < columns; j++)
+        for (int j = 0; j < Columns; j++)
             sb.Append("--");
         sb.AppendLine("-");
         for (int i = 0; i < nrows; i++)
@@ -145,25 +145,25 @@ public struct EllerJob : IJob
             sb.Append("|");
             //bool wasWallRight = false;
 
-            for (int j = 0; j < columns - 1; j++)
+            for (int j = 0; j < Columns - 1; j++)
             {
-                var wasWallRight = !cells[idx + j].HasFlag(CellConnect.Right);
+                var wasWallRight = !Cells[idx + j].HasFlag(CellConnect.Right);
 
                 sb.Append($"{(wasWallRight ? " |" : "  ")}");
             }
 
             sb.AppendLine(" |");
 
-            if (i < rows - 1)
+            if (i < Rows - 1)
             {
                 sb.Append("|");
-                for (int j = 0; j < columns; j++)
-                    sb.Append(!cells[idx++].HasFlag(CellConnect.Bottom) ? "--" : "  ");
+                for (int j = 0; j < Columns; j++)
+                    sb.Append(!Cells[idx++].HasFlag(CellConnect.Bottom) ? "--" : "  ");
                 sb.AppendLine("|");
             }
         }
 
-        for (int j = 0; j < columns; j++)
+        for (int j = 0; j < Columns; j++)
             sb.Append("--");
         sb.AppendLine("-");
 
