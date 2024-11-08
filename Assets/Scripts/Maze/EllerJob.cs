@@ -128,8 +128,6 @@ public struct EllerJob : IJob
 
     private void LogSetCells(string text)
     {
-        // text.Append(text);
-        // text.Append('\n');
         var sb = new StringBuilder();
 
         sb.AppendLine(text.ToString());

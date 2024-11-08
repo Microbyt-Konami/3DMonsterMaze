@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using Unity.Jobs;
+using UnityEngine;
 
 [Flags]
 public enum CellWall
@@ -15,6 +16,7 @@ public enum CellWall
 public struct ConnectCellsToWallsJob : IJob
 {
     public int Rows, Columns;
+    public bool Log;
     public NativeArray<CellConnect> Cells;
     public NativeArray<CellWall> Walls;
 
@@ -41,5 +43,53 @@ public struct ConnectCellsToWallsJob : IJob
                 Walls[idx++] = walls;
             }
         }
+        
+        if(Log)
+            LogWallsCells("Mostra las paredes");
+    }
+
+    private void LogWallsCells(string text)
+    {
+        var sb = new System.Text.StringBuilder();
+
+        sb.AppendLine(text.ToString());
+
+        int idx = 0;
+
+        for (int j = 0; j < Columns; j++)
+            sb.Append("--");
+        sb.AppendLine("-");
+        for (int i = 0; i < Rows; i++)
+        {
+            sb.Append("|");
+            //bool wasWallRight = false;
+
+            for (int j = 0; j < Columns - 1; j++)
+            {
+                if(Walls[idx + j].HasFlag(CellWall.North))
+                    sb.Append('N');
+                else
+                    sb.Append(' ');
+                var wasWallRight = !Walls[idx + j].HasFlag(CellWall.East);
+
+                sb.Append($"{(wasWallRight ? " |" : "  ")}");
+            }
+
+            sb.AppendLine(" |");
+
+            if (i < Rows - 1)
+            {
+                sb.Append("|");
+                for (int j = 0; j < Columns; j++)
+                    sb.Append(!Walls[idx++].HasFlag(CellWall.South) ? "--" : "  ");
+                sb.AppendLine("|");
+            }
+        }
+
+        for (int j = 0; j < Columns; j++)
+            sb.Append("--");
+        sb.AppendLine("-");
+
+        Debug.Log(sb.ToString());
     }
 }
