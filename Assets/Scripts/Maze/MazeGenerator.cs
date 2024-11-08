@@ -12,8 +12,11 @@ public class MazeGenerator : MonoBehaviour
 {
     public int rows = 10, columns = 10;
     public bool log;
+
+    [SerializeField] private GameObject cellPrefab;
+    [SerializeField] private GameObject wallPrefab;
     [field: SerializeField] public bool MazeGenerated { get; private set; }
-    [field: SerializeField] public NativeArray<CellWall> Walls;
+    //[field: SerializeField] public NativeArray<CellWall> Walls;
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
@@ -74,8 +77,17 @@ public class MazeGenerator : MonoBehaviour
         yield return new WaitUntil(() => handle.IsCompleted);
 
         handle.Complete();
-        Walls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
-        DisposeMemoryTemporal();
+
+        var position = new Vector3(10, 0, 10);
+        var cell = Instantiate(cellPrefab, position, Quaternion.identity);
+        var wallEast = Instantiate(wallPrefab, position + new Vector3(2.05f, 1.95f, 4f), Quaternion.Euler(0, 0, 90),
+            cell.transform);
+
+        cell.name = "generate";
+        wallEast.name = "wallEast";
+        //wallEast.transform.parent = cell.transform;
+        //Walls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
+        //DisposeMemoryTemporal();
         MazeGenerated = true;
     }
 

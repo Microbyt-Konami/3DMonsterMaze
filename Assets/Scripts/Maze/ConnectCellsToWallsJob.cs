@@ -17,7 +17,7 @@ public struct ConnectCellsToWallsJob : IJob
 {
     public int Rows, Columns;
     public bool Log;
-    public NativeArray<CellConnect> Cells;
+    [ReadOnly] public NativeArray<CellConnect> Cells;
     public NativeArray<CellWall> Walls;
 
     public void Execute()
@@ -43,8 +43,8 @@ public struct ConnectCellsToWallsJob : IJob
                 Walls[idx++] = walls;
             }
         }
-        
-        if(Log)
+
+        if (Log)
             LogWallsCells("Mostra las paredes");
     }
 
@@ -57,38 +57,52 @@ public struct ConnectCellsToWallsJob : IJob
         int idx = 0;
 
         for (int j = 0; j < Columns; j++)
-            sb.Append("--");
-        sb.AppendLine("-");
+            sb.Append("---");
+        sb.AppendLine();
         for (int i = 0; i < Rows; i++)
         {
-            sb.Append("|");
+            if (Walls[idx].HasFlag(CellWall.West))
+                sb.Append("|");
             //bool wasWallRight = false;
 
-            for (int j = 0; j < Columns - 1; j++)
+            for (int j = 0; j < Columns; j++)
             {
-                if(Walls[idx + j].HasFlag(CellWall.North))
+                if (Walls[idx + j].HasFlag(CellWall.North))
                     sb.Append('N');
                 else
                     sb.Append(' ');
-                var wasWallRight = !Walls[idx + j].HasFlag(CellWall.East);
+                if (Walls[idx + j].HasFlag(CellWall.West))
+                    sb.Append('W');
+                else
+                    sb.Append(' ');
 
-                sb.Append($"{(wasWallRight ? " |" : "  ")}");
+                if (Walls[idx + j].HasFlag(CellWall.East))
+                    sb.Append('|');
+                else
+                    sb.Append(' ');
             }
 
-            sb.AppendLine(" |");
-
-            if (i < Rows - 1)
-            {
+            sb.AppendLine();
+            if (Walls[idx].HasFlag(CellWall.West))
                 sb.Append("|");
-                for (int j = 0; j < Columns; j++)
-                    sb.Append(!Walls[idx++].HasFlag(CellWall.South) ? "--" : "  ");
-                sb.AppendLine("|");
+            for (int j = 0; j < Columns; j++)
+            {
+                if (Walls[idx + j].HasFlag(CellWall.South))
+                    sb.Append("--");
+                else
+                    sb.Append("  ");
+                if (Walls[idx + j].HasFlag(CellWall.East))
+                    sb.Append('|');
+                else
+                    sb.Append(' ');
             }
+
+            sb.AppendLine();
         }
 
         for (int j = 0; j < Columns; j++)
-            sb.Append("--");
-        sb.AppendLine("-");
+            sb.Append("---");
+        sb.AppendLine();
 
         Debug.Log(sb.ToString());
     }
