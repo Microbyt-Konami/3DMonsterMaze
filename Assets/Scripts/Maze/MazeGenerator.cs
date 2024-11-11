@@ -80,7 +80,10 @@ public class MazeGenerator : MonoBehaviour
 
         var position = new Vector3(10, 0, 10);
         var cell = Instantiate(cellPrefab, position, Quaternion.identity);
-        var wallEast = Instantiate(wallPrefab, position + new Vector3(2.05f, 1.95f, 4f), Quaternion.Euler(0, 0, 90),
+        var CellScript = cell.GetComponent<Cell>();
+        var wallEast = Instantiate(wallPrefab,
+            CellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
+            CellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
             cell.transform);
 
         cell.name = "generate";
