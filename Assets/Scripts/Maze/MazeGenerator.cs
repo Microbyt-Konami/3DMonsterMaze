@@ -84,10 +84,25 @@ public class MazeGenerator : MonoBehaviour
         var wallEast = Instantiate(wallPrefab,
             CellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
             CellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
-            cell.transform);
+            CellScript.walls);
+        var wallWest = Instantiate(wallPrefab,
+            CellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
+            CellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
+            CellScript.walls);
+        var wallNorth = Instantiate(wallPrefab,
+            CellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
+            CellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+            CellScript.walls);
+        var wallSouth = Instantiate(wallPrefab,
+            CellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
+            CellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+            CellScript.walls);
 
-        cell.name = "generate";
+        cell.name = "cellTest";
         wallEast.name = "wallEast";
+        wallWest.name = "wallWest";
+        wallNorth.name = "wallNorth";
+        wallSouth.name = "wallSouth";
         //wallEast.transform.parent = cell.transform;
         //Walls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
         //DisposeMemoryTemporal();
