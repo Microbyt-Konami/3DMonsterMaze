@@ -3,11 +3,13 @@ using Unity.Jobs;
 
 public struct FindAWayMazeJob : IJob
 {
-    public int Rows, Columns;
+    [ReadOnly] public int Rows, Columns;
+
     [ReadOnly] public NativeArray<CellWall> Walls;
+
     // -1 cualquier fila c columna
-    public int ColIni, ColFin;
-    public int RowIni, RowFin;
+    [ReadOnly] public int ColIni, ColFin;
+    [ReadOnly] public int RowIni, RowFin;
 
     public void Execute()
     {

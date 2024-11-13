@@ -15,8 +15,10 @@ public class MazeGenerator : MonoBehaviour
 
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private GameObject wallPrefab;
+    [SerializeField] private Transform mazeParent;
+    [SerializeField] private bool hideRoot;
     [field: SerializeField] public bool MazeGenerated { get; private set; }
-    //[field: SerializeField] public NativeArray<CellWall> Walls;
+    [field: SerializeField] public NativeArray<CellWall> CellWalls;
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
@@ -78,40 +80,102 @@ public class MazeGenerator : MonoBehaviour
 
         handle.Complete();
 
-        var position = new Vector3(10, 0, 10);
-        var cell = Instantiate(cellPrefab, position, Quaternion.identity);
-        var CellScript = cell.GetComponent<Cell>();
-        var wallEast = Instantiate(wallPrefab,
-            CellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
-            CellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
-            CellScript.walls);
-        var wallWest = Instantiate(wallPrefab,
-            CellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
-            CellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
-            CellScript.walls);
-        var wallNorth = Instantiate(wallPrefab,
-            CellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
-            CellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
-            CellScript.walls);
-        var wallSouth = Instantiate(wallPrefab,
-            CellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
-            CellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
-            CellScript.walls);
+        CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
+        _walls.Dispose();
+        _cells.Dispose();
 
-        cell.name = "cellTest";
-        wallEast.name = "wallEast";
-        wallWest.name = "wallWest";
-        wallNorth.name = "wallNorth";
-        wallSouth.name = "wallSouth";
-        //wallEast.transform.parent = cell.transform;
-        //Walls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
-        //DisposeMemoryTemporal();
+        yield return CreateMazeCellsCoRoutine();
+
+        // var position = new Vector3(10, 0, 10);
+        // var cell = Instantiate(cellPrefab, position, Quaternion.identity);
+        // var cellScript = cell.GetComponent<Cell>();
+        // var wallEast = Instantiate(wallPrefab,
+        //     cellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
+        //     cellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
+        //     cellScript.walls);
+        // var wallWest = Instantiate(wallPrefab,
+        //     cellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
+        //     cellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
+        //     cellScript.walls);
+        // var wallNorth = Instantiate(wallPrefab,
+        //     cellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
+        //     cellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+        //     cellScript.walls);
+        // var wallSouth = Instantiate(wallPrefab,
+        //     cellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
+        //     cellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+        //     cellScript.walls);
+        //
+        // cell.name = "cellTest";
+        // wallEast.name = "wallEast";
+        // wallWest.name = "wallWest";
+        // wallNorth.name = "wallNorth";
+        // wallSouth.name = "wallSouth";
         MazeGenerated = true;
+    }
+
+    private IEnumerator CreateMazeCellsCoRoutine()
+    {
+        for (int i = 0, idx = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+                CreateCell(i, j, CellWalls[idx++]);
+        }
+
+        yield break;
+    }
+
+    private void CreateCell(int row, int col, CellWall wall)
+    {
+        var position = new Vector3(4 * row, 0, 4 * col);
+        var cell = Instantiate(cellPrefab, position, Quaternion.identity, mazeParent);
+        var cellScript = cell.GetComponent<Cell>();
+
+        if (col == columns - 1)
+        {
+            var wallEast = Instantiate(wallPrefab,
+                cellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
+                cellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
+                cellScript.walls);
+            wallEast.name = "wallEast";
+        }
+
+        if (col == 0)
+        {
+            var wallWest = Instantiate(wallPrefab,
+                cellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
+                cellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
+                cellScript.walls);
+            wallWest.name = "wallWest";
+        }
+
+        if (row == 0)
+        {
+            var wallNorth = Instantiate(wallPrefab,
+                cellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
+                cellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+                cellScript.walls);
+            wallNorth.name = "wallNorth";
+        }
+
+        if (row == rows - 1)
+        {
+            var wallSouth = Instantiate(wallPrefab,
+                cellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
+                cellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
+                cellScript.walls);
+            wallSouth.name = "wallSouth";
+        }
+
+        cell.name = $"cell_{row}_{col}";
+        if (hideRoot)
+            cellScript.root.SetActive(false);
     }
 
     private void DisposeMemoryTemporal()
     {
         _cells.Dispose();
         _walls.Dispose();
+        CellWalls.Dispose();
     }
 }

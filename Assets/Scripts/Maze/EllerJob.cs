@@ -16,10 +16,10 @@ public enum CellConnect
 
 public struct EllerJob : IJob
 {
-    public uint Seed;
-    public int Rows, Columns;
+    [ReadOnly] public uint Seed;
+    [ReadOnly] public int Rows, Columns;
     public NativeArray<CellConnect> Cells;
-    public bool Log;
+    [ReadOnly] public bool Log;
 
     private Random _random;
     private int _idxRowCurrentIni;

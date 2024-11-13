@@ -15,8 +15,8 @@ public enum CellWall
 
 public struct ConnectCellsToWallsJob : IJob
 {
-    public int Rows, Columns;
-    public bool Log;
+    [ReadOnly] public int Rows, Columns;
+    [ReadOnly] public bool Log;
     [ReadOnly] public NativeArray<CellConnect> Cells;
     public NativeArray<CellWall> Walls;
 
