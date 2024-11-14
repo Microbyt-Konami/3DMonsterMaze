@@ -131,7 +131,7 @@ public class MazeGenerator : MonoBehaviour
         var cell = Instantiate(cellPrefab, position, Quaternion.identity, mazeParent);
         var cellScript = cell.GetComponent<Cell>();
 
-        if (col == columns - 1)
+        if (wall.HasFlag(CellWall.East))
         {
             var wallEast = Instantiate(wallPrefab,
                 cellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
@@ -140,7 +140,7 @@ public class MazeGenerator : MonoBehaviour
             wallEast.name = "wallEast";
         }
 
-        if (col == 0)
+        if (wall.HasFlag(CellWall.West))
         {
             var wallWest = Instantiate(wallPrefab,
                 cellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
@@ -149,7 +149,7 @@ public class MazeGenerator : MonoBehaviour
             wallWest.name = "wallWest";
         }
 
-        if (row == 0)
+        if (wall.HasFlag(CellWall.North))
         {
             var wallNorth = Instantiate(wallPrefab,
                 cellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
@@ -158,7 +158,7 @@ public class MazeGenerator : MonoBehaviour
             wallNorth.name = "wallNorth";
         }
 
-        if (row == rows - 1)
+        if (wall.HasFlag(CellWall.South))
         {
             var wallSouth = Instantiate(wallPrefab,
                 cellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
