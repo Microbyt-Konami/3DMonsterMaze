@@ -1077,6 +1077,11 @@ MonoBehaviour:
   log: 1
   cellPrefab: {fileID: 6578446540063670379, guid: 8f7a7d369702d2c4388b6da695a96fc6, type: 3}
   wallPrefab: {fileID: 8041946676644043617, guid: b26313811e3e4cd46862a0d3a08deb32, type: 3}
+  floorRock1Prefab: {fileID: 6271143319777939592, guid: 2bb6d551af34ed4459f0cc708b6a5e27, type: 3}
+  floorRock2Prefab: {fileID: 1449647589770047291, guid: 4cec7f2cb5b21b64abfdc1f65df3d814, type: 3}
+  wallOreBluePrefab: {fileID: 5518767888319274250, guid: a5b28043a693f404e8c1d849867d5ebc, type: 3}
+  wallOreGreenPrefab: {fileID: 0}
+  wallOreRedPrefab: {fileID: 0}
   mazeParent: {fileID: 543742564}
   hideRoot: 1
   <MazeGenerated>k__BackingField: 0
@@ -2419,6 +2424,10 @@ PrefabInstance:
     - target: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8616685848737228382, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_StepOffset
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 8997996947095583982, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_RootOrder

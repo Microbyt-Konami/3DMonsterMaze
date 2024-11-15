@@ -15,6 +15,11 @@ public class MazeGenerator : MonoBehaviour
 
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private GameObject wallPrefab;
+    [SerializeField] private GameObject floorRock1Prefab;
+    [SerializeField] private GameObject floorRock2Prefab;
+    [SerializeField] private GameObject wallOreBluePrefab;
+    [SerializeField] private GameObject wallOreGreenPrefab;
+    [SerializeField] private GameObject wallOreRedPrefab;
     [SerializeField] private Transform mazeParent;
     [SerializeField] private bool hideRoot;
     [field: SerializeField] public bool MazeGenerated { get; private set; }
@@ -137,7 +142,9 @@ public class MazeGenerator : MonoBehaviour
                 cellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
                 cellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
                 cellScript.walls);
+
             wallEast.name = "wallEast";
+            AddWallsOre(wallEast);
         }
 
         if (wall.HasFlag(CellWall.West))
@@ -146,7 +153,9 @@ public class MazeGenerator : MonoBehaviour
                 cellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
                 cellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
                 cellScript.walls);
+
             wallWest.name = "wallWest";
+            AddWallsOre(wallWest);
         }
 
         if (wall.HasFlag(CellWall.North))
@@ -155,7 +164,9 @@ public class MazeGenerator : MonoBehaviour
                 cellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
                 cellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
                 cellScript.walls);
+
             wallNorth.name = "wallNorth";
+            AddWallsOre(wallNorth);
         }
 
         if (wall.HasFlag(CellWall.South))
@@ -164,12 +175,41 @@ public class MazeGenerator : MonoBehaviour
                 cellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
                 cellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
                 cellScript.walls);
+
             wallSouth.name = "wallSouth";
+            AddWallsOre(wallSouth);
         }
 
         cell.name = $"cell_{row}_{col}";
+        AddFloorRocks(cellScript.floor);
         if (hideRoot)
             cellScript.root.SetActive(false);
+    }
+
+    private void AddFloorRocks(Floor floor)
+    {
+        CreateSpawnerItem(floor.gameObject, floor.spawnerRock1, floorRock1Prefab);
+        CreateSpawnerItem(floor.gameObject, floor.spawnerRock2, floorRock2Prefab);
+    }
+
+    private void AddWallsOre(GameObject wallGO)
+    {
+        var wall = wallGO.GetComponent<Wall>();
+
+        CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
+    }
+
+    private void CreateSpawnerItem(GameObject objeto, SpawnerItemsCell spawnerItem, GameObject itemPrefab)
+    {
+        var count = Random.Range(spawnerItem.minItems, spawnerItem.maxItems);
+
+        for (int i = 0; i < count; i++)
+        {
+            var position = new Vector3(Random.Range(spawnerItem.minX, spawnerItem.maxX), Random.Range(spawnerItem.minY, spawnerItem.maxY), Random.Range(spawnerItem.minZ, spawnerItem.maxZ));
+            var item = Instantiate(itemPrefab, spawnerItem.transform.TransformPoint(position), spawnerItem.transform.rotation, objeto.transform);
+
+            item.name = $"{itemPrefab.name}_{i}";
+        }
     }
 
     private void DisposeMemoryTemporal()
