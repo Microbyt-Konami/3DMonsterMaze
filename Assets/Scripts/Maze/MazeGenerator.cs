@@ -138,52 +138,43 @@ public class MazeGenerator : MonoBehaviour
 
         if (wall.HasFlag(CellWall.East))
         {
-            var wallEast = Instantiate(wallPrefab,
-                cellScript.wallEastPoint.position /*position + new Vector3(2.05f, 1.95f, 4f)*/,
-                cellScript.wallEastPoint.rotation /* Quaternion.Euler(0, 0, 90)*/,
-                cellScript.walls);
-
-            wallEast.name = "wallEast";
-            AddWallsOre(wallEast);
+            CreateWall(CellWall.East, cellScript.walls, "wallEast", cellScript.wallEastPoint.position,
+                cellScript.wallEastPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.West))
         {
-            var wallWest = Instantiate(wallPrefab,
-                cellScript.wallWestPoint.position /*position + new Vector3(-2.05f, 1.95f, 4f)*/,
-                cellScript.wallWestPoint.rotation /*Quaternion.Euler(0, 0, 90)*/,
-                cellScript.walls);
-
-            wallWest.name = "wallWest";
-            AddWallsOre(wallWest);
+            CreateWall(CellWall.West, cellScript.walls, "wallWest", cellScript.wallWestPoint.position,
+                cellScript.wallWestPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.North))
         {
-            var wallNorth = Instantiate(wallPrefab,
-                cellScript.wallNorthPoint.position /*position + new Vector3(4f, 1.95f, 2.05f)*/,
-                cellScript.wallNorthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
-                cellScript.walls);
-
-            wallNorth.name = "wallNorth";
-            AddWallsOre(wallNorth);
+            CreateWall(CellWall.North, cellScript.walls, "wallNorth", cellScript.wallNorthPoint.position,
+                cellScript.wallNorthPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.South))
         {
-            var wallSouth = Instantiate(wallPrefab,
-                cellScript.wallSouthPoint.position /*position + new Vector3(4f, 1.95f, -2.05f)*/,
-                cellScript.wallSouthPoint.rotation /*Quaternion.Euler(0, 0, 0)*/,
-                cellScript.walls);
-
-            wallSouth.name = "wallSouth";
-            AddWallsOre(wallSouth);
+            CreateWall(CellWall.South, cellScript.walls, "wallSouth", cellScript.wallSouthPoint.position,
+                cellScript.wallSouthPoint.rotation);
         }
 
         cell.name = $"cell_{row}_{col}";
         AddFloorRocks(cellScript.floor);
         if (hideRoot)
             cellScript.root.SetActive(false);
+    }
+
+    // Replaced the TODO comment with the implementation
+    private GameObject CreateWall(CellWall wall, Transform wallParent, string wallName, Vector3 wallPosition,
+        Quaternion wallRotation)
+    {
+        var wallObject = Instantiate(wallPrefab, wallPosition, wallRotation, wallParent);
+        wallObject.name = wallName;
+        AddWallsOre(wallObject);
+
+        return wallObject;
     }
 
     private void AddFloorRocks(Floor floor)
@@ -196,7 +187,9 @@ public class MazeGenerator : MonoBehaviour
     {
         var wall = wallGO.GetComponent<Wall>();
 
-        //CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreGreen, wallOreGreenPrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreRed, wallOreRedPrefab);
     }
 
     private void CreateSpawnerItem(GameObject objeto, SpawnerItemsCell spawnerItem, GameObject itemPrefab)
@@ -205,8 +198,10 @@ public class MazeGenerator : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            var position = new Vector3(Random.Range(spawnerItem.minX, spawnerItem.maxX), Random.Range(spawnerItem.minY, spawnerItem.maxY), Random.Range(spawnerItem.minZ, spawnerItem.maxZ));
-            var item = Instantiate(itemPrefab, spawnerItem.transform.TransformPoint(position), spawnerItem.transform.rotation, objeto.transform);
+            var position = new Vector3(Random.Range(spawnerItem.minX, spawnerItem.maxX),
+                Random.Range(spawnerItem.minY, spawnerItem.maxY), Random.Range(spawnerItem.minZ, spawnerItem.maxZ));
+            var item = Instantiate(itemPrefab, spawnerItem.transform.TransformPoint(position), Quaternion.identity,
+                spawnerItem.transform);
 
             item.name = $"{itemPrefab.name}_{i}";
         }

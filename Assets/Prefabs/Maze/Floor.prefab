@@ -208,7 +208,7 @@ MonoBehaviour:
   minZ: -1.907
   maxZ: 1.907
   minItems: 0
-  maxItems: 100
+  maxItems: 60
 --- !u!1 &6285612269197921688
 GameObject:
   m_ObjectHideFlags: 0
@@ -260,4 +260,4 @@ MonoBehaviour:
   minZ: -1.89
   maxZ: 1.89
   minItems: 0
-  maxItems: 100
+  maxItems: 60
