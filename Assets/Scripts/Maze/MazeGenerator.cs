@@ -187,9 +187,9 @@ public class MazeGenerator : MonoBehaviour
     {
         var wall = wallGO.GetComponent<Wall>();
 
-        CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
-        CreateSpawnerItem(wallGO, wall.spawnerOreGreen, wallOreGreenPrefab);
-        CreateSpawnerItem(wallGO, wall.spawnerOreRed, wallOreRedPrefab);
+        // CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
+        // CreateSpawnerItem(wallGO, wall.spawnerOreGreen, wallOreGreenPrefab);
+        // CreateSpawnerItem(wallGO, wall.spawnerOreRed, wallOreRedPrefab);
     }
 
     private void CreateSpawnerItem(GameObject objeto, SpawnerItemsCell spawnerItem, GameObject itemPrefab)

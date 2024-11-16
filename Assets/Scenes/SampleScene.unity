@@ -1080,8 +1080,8 @@ MonoBehaviour:
   floorRock1Prefab: {fileID: 6271143319777939592, guid: 2bb6d551af34ed4459f0cc708b6a5e27, type: 3}
   floorRock2Prefab: {fileID: 1449647589770047291, guid: 4cec7f2cb5b21b64abfdc1f65df3d814, type: 3}
   wallOreBluePrefab: {fileID: 5518767888319274250, guid: a5b28043a693f404e8c1d849867d5ebc, type: 3}
-  wallOreGreenPrefab: {fileID: 0}
-  wallOreRedPrefab: {fileID: 0}
+  wallOreGreenPrefab: {fileID: 2409454985710182725, guid: 28aa157ce4e7ecb3aa3c7096f351c8ce, type: 3}
+  wallOreRedPrefab: {fileID: 4891882613821529808, guid: 9ab1f5afa15700c22a92f717e9a04450, type: 3}
   mazeParent: {fileID: 543742564}
   hideRoot: 1
   <MazeGenerated>k__BackingField: 0
