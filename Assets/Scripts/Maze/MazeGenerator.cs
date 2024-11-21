@@ -20,6 +20,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private GameObject wallOreBluePrefab;
     [SerializeField] private GameObject wallOreGreenPrefab;
     [SerializeField] private GameObject wallOreRedPrefab;
+    [SerializeField] private Material[] wallMaterials;
     [SerializeField] private Transform mazeParent;
     [SerializeField] private bool hideRoot;
     [field: SerializeField] public bool MazeGenerated { get; private set; }
@@ -36,9 +37,12 @@ public class MazeGenerator : MonoBehaviour
     private JobHandle _wallsJobHandle;
     private JobHandle _findAWayMazeJobHandle;
 
+    [SerializeField] private int nWallsMaterialsChanged;
+
     public void GenerateMaze()
     {
         MazeGenerated = false;
+        nWallsMaterialsChanged = 0;
         _cells = new NativeArray<CellConnect>(rows * columns, Allocator.TempJob);
         _walls = new NativeArray<CellWall>(rows * columns, Allocator.TempJob);
 
@@ -136,45 +140,52 @@ public class MazeGenerator : MonoBehaviour
         var cell = Instantiate(cellPrefab, position, Quaternion.identity, mazeParent);
         var cellScript = cell.GetComponent<Cell>();
 
+        cell.name = $"cell_{row}_{col}";
+        cellScript.row = row;
+        cellScript.column = col;
+
         if (wall.HasFlag(CellWall.East))
         {
-            CreateWall(CellWall.East, cellScript.walls, "wallEast", cellScript.wallEastPoint.position,
+            CreateWall(cellScript, CellWall.East, cellScript.walls, "wallEast", cellScript.wallEastPoint.position,
                 cellScript.wallEastPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.West))
         {
-            CreateWall(CellWall.West, cellScript.walls, "wallWest", cellScript.wallWestPoint.position,
+            CreateWall(cellScript, CellWall.West, cellScript.walls, "wallWest", cellScript.wallWestPoint.position,
                 cellScript.wallWestPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.North))
         {
-            CreateWall(CellWall.North, cellScript.walls, "wallNorth", cellScript.wallNorthPoint.position,
+            CreateWall(cellScript, CellWall.North, cellScript.walls, "wallNorth", cellScript.wallNorthPoint.position,
                 cellScript.wallNorthPoint.rotation);
         }
 
         if (wall.HasFlag(CellWall.South))
         {
-            CreateWall(CellWall.South, cellScript.walls, "wallSouth", cellScript.wallSouthPoint.position,
+            CreateWall(cellScript, CellWall.South, cellScript.walls, "wallSouth", cellScript.wallSouthPoint.position,
                 cellScript.wallSouthPoint.rotation);
         }
 
-        cell.name = $"cell_{row}_{col}";
         AddFloorRocks(cellScript.floor);
         if (hideRoot)
             cellScript.root.SetActive(false);
     }
 
     // Replaced the TODO comment with the implementation
-    private GameObject CreateWall(CellWall wall, Transform wallParent, string wallName, Vector3 wallPosition,
-        Quaternion wallRotation)
+    private Wall CreateWall(Cell cell, CellWall cellWall, Transform wallParent, string wallName,
+        Vector3 wallPosition, Quaternion wallRotation)
     {
-        var wallObject = Instantiate(wallPrefab, wallPosition, wallRotation, wallParent);
-        wallObject.name = wallName;
-        AddWallsOre(wallObject);
+        var wallGO = Instantiate(wallPrefab, wallPosition, wallRotation, wallParent);
+        var wall = wallGO.GetComponent<Wall>();
 
-        return wallObject;
+        wallGO.name = wallName;
+        AddWallsOre(wall);
+        if (Random.value < 0.05f)
+            ChangeWallMaterial(cell, wall);
+
+        return wall;
     }
 
     private void AddFloorRocks(Floor floor)
@@ -183,13 +194,26 @@ public class MazeGenerator : MonoBehaviour
         CreateSpawnerItem(floor.gameObject, floor.spawnerRock2, floorRock2Prefab);
     }
 
-    private void AddWallsOre(GameObject wallGO)
+    private void AddWallsOre(Wall wall)
     {
-        var wall = wallGO.GetComponent<Wall>();
+        var wallGO = wall.gameObject;
 
-        // CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
-        // CreateSpawnerItem(wallGO, wall.spawnerOreGreen, wallOreGreenPrefab);
-        // CreateSpawnerItem(wallGO, wall.spawnerOreRed, wallOreRedPrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreBlue, wallOreBluePrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreGreen, wallOreGreenPrefab);
+        CreateSpawnerItem(wallGO, wall.spawnerOreRed, wallOreRedPrefab);
+    }
+
+    private void ChangeWallMaterial(Cell cell, Wall wall)
+    {
+        if (cell.row == 0 || cell.row == rows - 1 || cell.column == 0 || cell.column == columns - 1)
+            return;
+
+        var materialIndex = Random.Range(0, wallMaterials.Length);
+        var material = wallMaterials[materialIndex];
+
+        wall.SetWallMaterial(material);
+        Debug.Log($"Change wall Material {wall.transform.parent.parent.gameObject}", wall.transform.parent.parent.gameObject);
+        nWallsMaterialsChanged++;
     }
 
     private void CreateSpawnerItem(GameObject objeto, SpawnerItemsCell spawnerItem, GameObject itemPrefab)

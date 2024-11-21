@@ -479,6 +479,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2852bba29b081c42a7789ce03466b20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _wallRenderer: {fileID: 2368605441675557615}
   spawnerOreBlue: {fileID: 7189273621055525461}
   spawnerOreGreen: {fileID: 5647738390647748787}
   spawnerOreRed: {fileID: 6296625557715310834}
