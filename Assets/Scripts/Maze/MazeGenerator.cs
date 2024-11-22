@@ -23,7 +23,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Material[] wallMaterials;
     [SerializeField] private Transform mazeParent;
     [SerializeField] private bool hideRoot;
-    [field: SerializeField] public bool MazeGenerated { get; private set; }
+    [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
     [field: SerializeField] public NativeArray<CellWall> CellWalls;
 
     private EllerJob _ellerJob;
@@ -67,6 +67,8 @@ public class MazeGenerator : MonoBehaviour
             Rows = rows,
             Columns = columns,
             Walls = _wallsJob.Walls,
+            WayResult = new NativeList<int>(0, Allocator.TempJob),
+            WayItemCurrent = new WayItem()
         };
 
         _mazeGeneratorJobHandle = _ellerJob.Schedule();
@@ -233,8 +235,11 @@ public class MazeGenerator : MonoBehaviour
 
     private void DisposeMemoryTemporal()
     {
-        _cells.Dispose();
-        _walls.Dispose();
-        CellWalls.Dispose();
+        if (_cells.IsCreated)
+            _cells.Dispose();
+        if (_walls.IsCreated)
+            _walls.Dispose();
+        if (CellWalls.IsCreated)
+            CellWalls.Dispose();
     }
 }

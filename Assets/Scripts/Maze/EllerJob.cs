@@ -18,8 +18,8 @@ public struct EllerJob : IJob
 {
     [ReadOnly] public uint Seed;
     [ReadOnly] public int Rows, Columns;
-    public NativeArray<CellConnect> Cells;
     [ReadOnly] public bool Log;
+    public NativeArray<CellConnect> Cells;
 
     private Random _random;
     private int _idxRowCurrentIni;
