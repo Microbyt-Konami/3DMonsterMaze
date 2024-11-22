@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -14,6 +15,7 @@ public enum CellConnect
     Default = Right | Bottom
 }
 
+[BurstCompile]
 public struct EllerJob : IJob
 {
     [ReadOnly] public uint Seed;
@@ -54,8 +56,8 @@ public struct EllerJob : IJob
             if (_random.NextBool())
                 Cells[i] |= CellConnect.Right;
 
-        if (Log)
-            LogSetCells("En la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no");
+        //if (Log)
+        //    LogSetCells("En la fila actual decidimos aleatoriamente por cada par de celda adjacentes si se unen o no");
     }
 
     private void JoinRowVCellsRandom()
@@ -89,8 +91,8 @@ public struct EllerJob : IJob
             }
         }
 
-        if (Log)
-            LogSetCells("Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.");
+        //if (Log)
+        //    LogSetCells("Ahora determinamos aleatoriamente las conexiones verticales, al menos una por conjunto.");
     }
 
     void JoinLastRowCells()
@@ -102,16 +104,17 @@ public struct EllerJob : IJob
         if (idxRowPrev >= 0 && idxRowPrevPrev >= 0)
         {
             for (; idxRowPrev < _idxRowCurrentIni; idxRowPrev++, idxRowPrevPrev++)
-                if (Cells[idxRowPrevPrev].HasFlag(CellConnect.Bottom))
+                //if (Cells[idxRowPrevPrev].HasFlag(CellConnect.Bottom))
+                if ((Cells[idxRowPrevPrev] & CellConnect.Bottom) != 0)
                     Cells[idxRowPrev] |= CellConnect.Bottom;
         }
 
         for (var i = _idxRowCurrentIni; i < _idxRowCurrentEnd; i++)
             Cells[i] |= CellConnect.Right;
 
-        if (Log)
-            LogSetCells(
-                "Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior.");
+        //if (Log)
+        //    LogSetCells(
+        //        "Reiniciar los conjuntos conservando en el mismo conjunto aquellas celdas que compartan conjunto superior.");
     }
 
     private int GetCellEndSet(int idxRowCurrent)
@@ -120,12 +123,14 @@ public struct EllerJob : IJob
             return _idxRowCurrentEnd;
 
         for (var i = idxRowCurrent + 1; i < _idxRowCurrentEnd; i++)
-            if (!Cells[i].HasFlag(CellConnect.Right))
+            //if (!Cells[i].HasFlag(CellConnect.Right))
+            if ((Cells[i] & CellConnect.Right) == 0)
                 return i - 1;
 
         return _idxRowCurrentEnd;
     }
 
+    /*
     private void LogSetCells(string text)
     {
         var sb = new StringBuilder();
@@ -145,7 +150,8 @@ public struct EllerJob : IJob
 
             for (int j = 0; j < Columns - 1; j++)
             {
-                var wasWallRight = !Cells[idx + j].HasFlag(CellConnect.Right);
+                //var wasWallRight = !Cells[idx + j].HasFlag(CellConnect.Right);
+                var wasWallRight = (Cells[idx + j] & CellConnect.Right) == 0;
 
                 sb.Append($"{(wasWallRight ? " |" : "  ")}");
             }
@@ -156,7 +162,8 @@ public struct EllerJob : IJob
             {
                 sb.Append("|");
                 for (int j = 0; j < Columns; j++)
-                    sb.Append(!Cells[idx++].HasFlag(CellConnect.Bottom) ? "--" : "  ");
+                    //sb.Append(!Cells[idx++].HasFlag(CellConnect.Bottom) ? "--" : "  ");
+                    sb.Append((Cells[idx++] & CellConnect.Bottom) == 0 ? "--" : "  ");
                 sb.AppendLine("|");
             }
         }
@@ -167,4 +174,5 @@ public struct EllerJob : IJob
 
         Debug.Log(sb.ToString());
     }
+    */
 }

@@ -23,6 +23,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Material[] wallMaterials;
     [SerializeField] private Transform mazeParent;
     [SerializeField] private bool hideRoot;
+
     [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
     [field: SerializeField] public NativeArray<CellWall> CellWalls;
 
@@ -32,6 +33,7 @@ public class MazeGenerator : MonoBehaviour
 
     private NativeArray<CellConnect> _cells;
     private NativeArray<CellWall> _walls;
+    public NativeArray<int> _wayResult;
 
     private JobHandle _mazeGeneratorJobHandle;
     private JobHandle _wallsJobHandle;
@@ -66,9 +68,14 @@ public class MazeGenerator : MonoBehaviour
         {
             Rows = rows,
             Columns = columns,
-            Walls = _wallsJob.Walls,
-            WayResult = new NativeList<int>(0, Allocator.TempJob),
-            WayItemCurrent = new WayItem()
+            Log = log,
+            Walls = _walls,
+            ColIni = -1,
+            RowIni = 0,
+            ColEnd = -1,
+            RowEnd = rows - 1,
+            WayResult = new NativeList<int>(rows * 2 * columns, Allocator.TempJob),
+            MaxWayItem = rows * 2 * columns
         };
 
         _mazeGeneratorJobHandle = _ellerJob.Schedule();
@@ -85,17 +92,23 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator WaitGenerateMazeCoRoutine()
     {
-        var handle = _findAWayMazeJobHandle;
+        //var handle = _findAWayMazeJobHandle;
+        var handle = _wallsJobHandle;
 
         yield return new WaitUntil(() => handle.IsCompleted);
 
         handle.Complete();
+        _findAWayMazeJob.Execute();
 
         CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
+        _wayResult = _findAWayMazeJob.WayResult.AsArray();
         _walls.Dispose();
         _cells.Dispose();
 
         yield return CreateMazeCellsCoRoutine();
+
+        if (_wayResult.IsCreated)
+            _wayResult.Dispose();
 
         // var position = new Vector3(10, 0, 10);
         // var cell = Instantiate(cellPrefab, position, Quaternion.identity);
@@ -145,6 +158,8 @@ public class MazeGenerator : MonoBehaviour
         cell.name = $"cell_{row}_{col}";
         cellScript.row = row;
         cellScript.column = col;
+        if (_wayResult.Contains(row * columns + col))
+            cellScript.thisWay.SetActive(true);
 
         if (wall.HasFlag(CellWall.East))
         {
@@ -239,6 +254,8 @@ public class MazeGenerator : MonoBehaviour
             _cells.Dispose();
         if (_walls.IsCreated)
             _walls.Dispose();
+        if (_wayResult.IsCreated)
+            _wayResult.Dispose();
         if (CellWalls.IsCreated)
             CellWalls.Dispose();
     }
