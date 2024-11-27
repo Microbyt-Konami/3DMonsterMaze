@@ -8,6 +8,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.AI;
+using static EntryExitMazeJob;
 using Random = UnityEngine.Random;
 
 public class MazeGenerator : MonoBehaviour
@@ -29,19 +30,23 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private NavMeshAgent navMeshAgent;
 
     [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
-    [field: SerializeField] public NativeArray<CellWall> CellWalls;
+    //[field: SerializeField] public NativeArray<CellWall> CellWalls;
+    [field: SerializeField] public int ColEntry, ColExit;
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
     private FindAWayMazeJob _findAWayMazeJob;
+    private EntryExitMazeJob _entryExitMazeJob;
 
     private NativeArray<CellConnect> _cells;
     private NativeArray<CellWall> _walls;
+    private NativeList<EnTryExitCols> _entryExitCols;
     public NativeArray<int> _wayResult;
 
     private JobHandle _mazeGeneratorJobHandle;
     private JobHandle _wallsJobHandle;
     private JobHandle _findAWayMazeJobHandle;
+    private JobHandle _entryExitMazeJobHandle;
 
     [SerializeField] private int nWallsMaterialsChanged;
 
@@ -51,6 +56,7 @@ public class MazeGenerator : MonoBehaviour
         nWallsMaterialsChanged = 0;
         _cells = new NativeArray<CellConnect>(rows * columns, Allocator.TempJob);
         _walls = new NativeArray<CellWall>(rows * columns, Allocator.TempJob);
+        _entryExitCols = new NativeList<EnTryExitCols>(columns, Allocator.TempJob);
 
         _ellerJob = new EllerJob
         {
@@ -81,6 +87,14 @@ public class MazeGenerator : MonoBehaviour
         //    WayResult = new NativeList<int>(rows * 2 * columns, Allocator.TempJob),
         //    MaxWayItem = rows * 2 * columns
         //};
+        _entryExitMazeJob = new EntryExitMazeJob
+        {
+            Rows = rows,
+            Columns = columns,
+            Log = log,
+            Cells = _cells,
+            EntryExitCols = _entryExitCols
+        };
 
         _mazeGeneratorJobHandle = _ellerJob.Schedule();
         _wallsJobHandle = _wallsJob.Schedule(_mazeGeneratorJobHandle);
@@ -107,9 +121,16 @@ public class MazeGenerator : MonoBehaviour
         yield return new WaitUntil(() => handle.IsCompleted);
 
         handle.Complete();
+        _entryExitMazeJob.Execute();
+
+        var entryExit = _entryExitMazeJob.EntryExitCols[Random.Range(0, _entryExitMazeJob.EntryExitCols.Length)];
+
+        ColEntry = Random.Range(entryExit.colEntryIni, entryExit.colEntryEnd);
+        ColExit = Random.Range(entryExit.colExitIni, entryExit.colExitEnd);
+
         //_findAWayMazeJob.Execute();
 
-        CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
+        //CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
         //_wayResult = _findAWayMazeJob.WayResult.AsArray();
         _walls.Dispose();
         _cells.Dispose();
@@ -189,7 +210,7 @@ public class MazeGenerator : MonoBehaviour
         for (int i = 0, idx = 0; i < rows; i++)
         {
             for (int j = 0; j < columns; j++)
-                CreateCell(i, j, CellWalls[idx++]);
+                CreateCell(i, j, _walls[idx++]);
         }
 
         yield break;
@@ -302,7 +323,5 @@ public class MazeGenerator : MonoBehaviour
             _walls.Dispose();
         if (_wayResult.IsCreated)
             _wayResult.Dispose();
-        if (CellWalls.IsCreated)
-            CellWalls.Dispose();
     }
 }
