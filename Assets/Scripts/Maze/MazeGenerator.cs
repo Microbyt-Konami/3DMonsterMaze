@@ -137,25 +137,33 @@ public class MazeGenerator : MonoBehaviour
             handle.Complete();
         }
 
-        var entryExit = _entryExitMazeJob.EntryExitCols[Random.Range(0, _entryExitMazeJob.EntryExitCols.Length)];
+        int colEntry, colExit;
 
-        var colEntry = Random.Range(entryExit.colEntryIni, entryExit.colEntryEnd);
-        var colExit = Random.Range(entryExit.colExitIni, entryExit.colExitEnd);
+        if (_entryExitCols.Length > 0)
+        {
+            var entryExit = _entryExitMazeJob.EntryExitCols[Random.Range(0, _entryExitMazeJob.EntryExitCols.Length)];
+
+            colEntry = Random.Range(entryExit.colEntryIni, entryExit.colEntryEnd);
+            colExit = Random.Range(entryExit.colExitIni, entryExit.colExitEnd);
+        }
+        else
+            colEntry = colExit = -1;
 
         //_findAWayMazeJob.Execute();
 
         //CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
         //_wayResult = _findAWayMazeJob.WayResult.AsArray();
         _walls.Dispose();
-        _cells.Dispose();
         _entryExitCols.Dispose();
 
         yield return CreateMazeCellsCoRoutine();
 
         navMeshSurface.BuildNavMesh();
 
-        CellEntryGO = FindCellGO(0, colEntry);
-        CellExitGO = FindCellGO(rows - 1, colExit);
+        CellEntryGO = colEntry >= 0 ? FindCellGO(0, colEntry) : null;
+        CellExitGO = colExit >= 0 ? FindCellGO(rows - 1, colExit) : null;
+
+        _cells.Dispose();
 
         /*
         var path = navMeshAgent.path;

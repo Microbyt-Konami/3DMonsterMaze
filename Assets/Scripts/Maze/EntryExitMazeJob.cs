@@ -29,7 +29,7 @@ public struct EntryExitMazeJob : IJob
 
             if (node.row == Rows - 1)
             {
-                while (node.col < Columns - 1 && ((Cells[node.col] & CellConnect.Right) != 0))
+                while (node.col < Columns - 1 && ((Cells[node.row * Columns + node.col] & CellConnect.Right) != 0))
                     node.col++;
 
                 var colEndRow0 = node.colIniRow0;
@@ -45,12 +45,10 @@ public struct EntryExitMazeJob : IJob
                     colExitEnd = node.col,
                 });
 
+                node.col = colEndRow0 + 1;
+                node.row = 0;
                 if (node.col < Columns - 1)
-                {
-                    node.row = 0;
-                    node.col++;
                     nodes.Add(node);
-                }
             }
             else
             {
@@ -69,7 +67,13 @@ public struct EntryExitMazeJob : IJob
                 }
                 else if ((cell & CellConnect.Right) != 0)
                 {
+                    var hasWallR = (Cells[node.col] & CellConnect.Right) == 0;
+
                     node.col++;
+
+                    if (hasWallR)
+                        node.colIniRow0 = node.col;
+
                     nodes.Add(node);
                 }
                 else
