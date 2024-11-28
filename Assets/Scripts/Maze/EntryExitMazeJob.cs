@@ -1,10 +1,12 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 
+//[BurstCompile]
 public struct EntryExitMazeJob : IJob
 {
     [ReadOnly] public int Rows, Columns;
-    [ReadOnly] public bool Log;
+    [ReadOnly] public bool Debug;
     [ReadOnly] public NativeArray<CellConnect> Cells;
 
     public NativeList<EnTryExitCols> EntryExitCols;
@@ -12,7 +14,7 @@ public struct EntryExitMazeJob : IJob
     public void Execute()
     {
         var nodes = new NativeList<Node>(Rows, Allocator.Temp);
-        var node = new Node { col0 = 0, row = 0, col = 0 };
+        var node = new Node { colIni = 0, row = 0, col = 0, colIniRow0 = 0 };
         CellConnect cell;
 
         nodes.Add(node);
@@ -27,48 +29,45 @@ public struct EntryExitMazeJob : IJob
 
             if (node.row == Rows - 1)
             {
-                var nodeEnd = node;
-
-                while (nodeEnd.col < Columns - 1 && Cells[nodeEnd.col].HasFlag(CellConnect.Right))
-                    nodeEnd.col++;
-
-                nodes.RemoveRange(1, nodes.Length - 1);
-                node = nodes[0];
-                while (node.col < Columns - 1 && Cells[node.col].HasFlag(CellConnect.Right))
+                while (node.col < Columns - 1 && ((Cells[node.col] & CellConnect.Right) != 0))
                     node.col++;
+
+                var colEndRow0 = node.colIniRow0;
+
+                while (colEndRow0 < Columns - 1 && ((Cells[colEndRow0] & CellConnect.Right) != 0))
+                    colEndRow0++;
 
                 EntryExitCols.Add(new EnTryExitCols
                 {
-                    colEntryIni = nodeEnd.col0,
-                    colEntryEnd = nodeEnd.col,
-                    colExitIni = node.col,
+                    colEntryIni = node.colIniRow0,
+                    colEntryEnd = colEndRow0,
+                    colExitIni = node.colIni,
                     colExitEnd = node.col,
                 });
 
                 if (node.col < Columns - 1)
                 {
+                    node.row = 0;
                     node.col++;
-                    nodes[0] = node;
+                    nodes.Add(node);
                 }
-                else
-                    nodes.RemoveAt(0);
             }
             else
             {
                 cell = Cells[node.row * Columns + node.col];
 
-                if (cell.HasFlag(CellConnect.Bottom))
+                if ((cell & CellConnect.Bottom) != 0)
                 {
                     node.row++;
-                    if (node.row < Rows - 1)
+                    if (node.row <= Rows - 1)
                     {
-                        while (node.col > 0 && Cells[node.row * Columns + node.col - 1].HasFlag(CellConnect.Right))
+                        while (node.col > 0 && ((Cells[node.row * Columns + node.col - 1] & CellConnect.Right) != 0))
                             node.col--;
-                        node.col0 = node.col;
+                        node.colIni = node.col;
                         nodes.Add(node);
                     }
                 }
-                else if (cell.HasFlag(CellConnect.Right))
+                else if ((cell & CellConnect.Right) != 0)
                 {
                     node.col++;
                     nodes.Add(node);
@@ -77,8 +76,12 @@ public struct EntryExitMazeJob : IJob
                 {
                     if (node.row == 0)
                     {
+                        var hasWallR = (Cells[node.col] & CellConnect.Right) == 0;
+
                         node.col++;
-                        node.col0 = node.col;
+                        node.colIni = node.col;
+                        if (hasWallR)
+                            node.colIniRow0 = node.col;
                         nodes.Add(node);
                     }
                 }
@@ -96,6 +99,7 @@ public struct EntryExitMazeJob : IJob
 
     public struct Node
     {
-        public int row, col0, col;
+        public int row, colIni, col;
+        public int colIniRow0;
     }
 }

@@ -15,11 +15,11 @@ public enum CellWall
     AllWalls = North | East | South | West
 }
 
-[BurstCompile]
+//[BurstCompile]
 public struct ConnectCellsToWallsJob : IJob
 {
     [ReadOnly] public int Rows, Columns;
-    [ReadOnly] public bool Log;
+    [ReadOnly] public bool Debug;
     [ReadOnly] public NativeArray<CellConnect> Cells;
     public NativeArray<CellWall> Walls;
 

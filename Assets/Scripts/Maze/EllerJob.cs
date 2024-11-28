@@ -15,12 +15,12 @@ public enum CellConnect
     Default = Right | Bottom
 }
 
-[BurstCompile]
+//[BurstCompile]
 public struct EllerJob : IJob
 {
     [ReadOnly] public uint Seed;
     [ReadOnly] public int Rows, Columns;
-    [ReadOnly] public bool Log;
+    [ReadOnly] public bool Debug;
     public NativeArray<CellConnect> Cells;
 
     private Random _random;
