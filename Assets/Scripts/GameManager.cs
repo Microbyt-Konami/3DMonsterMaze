@@ -1,4 +1,6 @@
+using StarterAssets;
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -6,11 +8,21 @@ public class GameManager : MonoBehaviour
 {
     private MazeGenerator _mazeGenerator;
 
-    void Start()
+    IEnumerator Start()
     {
-        _mazeGenerator = FindAnyObjectByType<MazeGenerator>();        
+        _mazeGenerator = FindAnyObjectByType<MazeGenerator>();
+
         // Set target frame rate
         Application.targetFrameRate = 60;
-        _mazeGenerator.GenerateMaze();
+
+        yield return _mazeGenerator.GenerateMaze();
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+
+        if (_mazeGenerator.CellEntryGO != null)
+            player.transform.position = _mazeGenerator.CellEntryGO.transform.position;
+
+        //if (_mazeGenerator.CellExitGO != null && _mazeGenerator.CellExitGO.TryGetComponent<Cell>(out var cell))
+        //    cell.HideWalls(CellWall.South);
     }
 }

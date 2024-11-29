@@ -15,7 +15,7 @@ public enum CellConnect
     Default = Right | Bottom
 }
 
-//[BurstCompile]
+[BurstCompile]
 public struct EllerJob : IJob
 {
     [ReadOnly] public uint Seed;

@@ -15,7 +15,7 @@ public enum CellWall
     AllWalls = North | East | South | West
 }
 
-//[BurstCompile]
+[BurstCompile]
 public struct ConnectCellsToWallsJob : IJob
 {
     [ReadOnly] public int Rows, Columns;

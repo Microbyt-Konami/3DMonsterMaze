@@ -1131,7 +1131,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 10
   columns: 10
-  debug: 1
+  debug: 0
   cellPrefab: {fileID: 6578446540063670379, guid: 8f7a7d369702d2c4388b6da695a96fc6, type: 3}
   wallPrefab: {fileID: 8041946676644043617, guid: b26313811e3e4cd46862a0d3a08deb32, type: 3}
   floorRock1Prefab: {fileID: 6271143319777939592, guid: 2bb6d551af34ed4459f0cc708b6a5e27, type: 3}

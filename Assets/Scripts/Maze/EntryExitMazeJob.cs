@@ -2,7 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 
-//[BurstCompile]
+[BurstCompile]
 public struct EntryExitMazeJob : IJob
 {
     [ReadOnly] public int Rows, Columns;
@@ -13,84 +13,67 @@ public struct EntryExitMazeJob : IJob
 
     public void Execute()
     {
-        var nodes = new NativeList<Node>(Rows, Allocator.Temp);
-        var node = new Node { colIni = 0, row = 0, col = 0, colIniRow0 = 0 };
-        CellConnect cell;
+        var nodes = new NativeArray<int>(Rows, Allocator.Temp);
+        var row = 0;
+        var colLast = Columns - 1;
+        var rowLast = Rows - 1;
 
-        nodes.Add(node);
-
-        while (nodes.Length > 0)
+        do
         {
-            node = nodes[nodes.Length - 1];
-            nodes.RemoveAt(nodes.Length - 1);
+            var col = nodes[row];
 
-            if (node.col >= Columns)
-                continue;
-
-            if (node.row == Rows - 1)
+            if (col >= Columns)
             {
-                while (node.col < Columns - 1 && ((Cells[node.row * Columns + node.col] & CellConnect.Right) != 0))
-                    node.col++;
+                row--;
+                continue;
+            }
 
-                var colEndRow0 = node.colIniRow0;
+            var cell = Cells[row * Columns + col];
 
-                while (colEndRow0 < Columns - 1 && ((Cells[colEndRow0] & CellConnect.Right) != 0))
-                    colEndRow0++;
-
-                EntryExitCols.Add(new EnTryExitCols
+            if (row < rowLast)
+            {
+                if ((cell & CellConnect.Bottom) != 0)
                 {
-                    colEntryIni = node.colIniRow0,
-                    colEntryEnd = colEndRow0,
-                    colExitIni = node.colIni,
-                    colExitEnd = node.col,
-                });
-
-                node.col = colEndRow0 + 1;
-                node.row = 0;
-                if (node.col < Columns - 1)
-                    nodes.Add(node);
+                    row++;
+                    while (col > 0 && ((Cells[row * Columns + col - 1] & CellConnect.Right) != 0))
+                        col--;
+                    nodes[row] = col;
+                }
+                else
+                    nodes[row]++;
             }
             else
             {
-                cell = Cells[node.row * Columns + node.col];
+                var colIniRow0 = nodes[0];
+                var colEndRow0 = colIniRow0;
+                var colIniRowLast = col;
+                var colEndRowLast = col;
 
-                if ((cell & CellConnect.Bottom) != 0)
+                while (colIniRow0 > 0 && ((Cells[colIniRow0 - 1] & CellConnect.Right) != 0))
+                    colIniRow0--;
+
+                while (colEndRow0 < colLast && ((Cells[colEndRow0] & CellConnect.Right) != 0))
+                    colEndRow0++;
+
+                nodes[0] = colEndRow0 + 1;
+
+                while (colIniRowLast > 0 && ((Cells[rowLast * Columns + colIniRowLast - 1] & CellConnect.Right) != 0))
+                    colIniRowLast--;
+
+                while (colEndRowLast < colLast && ((Cells[rowLast * Columns + colEndRowLast] & CellConnect.Right) != 0))
+                    colEndRowLast++;
+
+                EntryExitCols.Add(new EnTryExitCols
                 {
-                    node.row++;
-                    if (node.row <= Rows - 1)
-                    {
-                        while (node.col > 0 && ((Cells[node.row * Columns + node.col - 1] & CellConnect.Right) != 0))
-                            node.col--;
-                        node.colIni = node.col;
-                        nodes.Add(node);
-                    }
-                }
-                else if ((cell & CellConnect.Right) != 0)
-                {
-                    var hasWallR = (Cells[node.col] & CellConnect.Right) == 0;
+                    colEntryIni = colIniRow0,
+                    colEntryEnd = colEndRow0,
+                    colExitIni = colIniRowLast,
+                    colExitEnd = colEndRowLast,
+                });
 
-                    node.col++;
-
-                    if (hasWallR)
-                        node.colIniRow0 = node.col;
-
-                    nodes.Add(node);
-                }
-                else
-                {
-                    if (node.row == 0)
-                    {
-                        var hasWallR = (Cells[node.col] & CellConnect.Right) == 0;
-
-                        node.col++;
-                        node.colIni = node.col;
-                        if (hasWallR)
-                            node.colIniRow0 = node.col;
-                        nodes.Add(node);
-                    }
-                }
+                row = 0;
             }
-        }
+        } while (row >= 0);
 
         if (nodes.IsCreated)
             nodes.Dispose();

@@ -33,10 +33,10 @@ public class MazeGenerator : MonoBehaviour
     //[field: SerializeField] public NativeArray<CellWall> CellWalls;
     [field: SerializeField] public GameObject CellEntryGO { get; private set; }
     [field: SerializeField] public GameObject CellExitGO { get; private set; }
+    [SerializeField] private int nWallsMaterialsChanged;
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
-    private FindAWayMazeJob _findAWayMazeJob;
     private EntryExitMazeJob _entryExitMazeJob;
 
     private NativeArray<CellConnect> _cells;
@@ -46,12 +46,11 @@ public class MazeGenerator : MonoBehaviour
 
     private JobHandle _mazeGeneratorJobHandle;
     private JobHandle _wallsJobHandle;
-    private JobHandle _findAWayMazeJobHandle;
     private JobHandle _entryExitMazeJobHandle;
 
-    [SerializeField] private int nWallsMaterialsChanged;
+    private int colEntry, colExit;
 
-    public void GenerateMaze()
+    public Coroutine GenerateMaze()
     {
         MazeGenerated = false;
         nWallsMaterialsChanged = 0;
@@ -112,7 +111,7 @@ public class MazeGenerator : MonoBehaviour
             _entryExitMazeJobHandle = _entryExitMazeJob.Schedule(_wallsJobHandle);
         }
 
-        StartCoroutine(WaitGenerateMazeCoRoutine());
+        return StartCoroutine(WaitGenerateMazeCoRoutine());
     }
 
     private void Start()
@@ -127,7 +126,6 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator WaitGenerateMazeCoRoutine()
     {
-        //var handle = _findAWayMazeJobHandle;
         if (!debug)
         {
             var handle = _entryExitMazeJobHandle;
@@ -136,8 +134,6 @@ public class MazeGenerator : MonoBehaviour
 
             handle.Complete();
         }
-
-        int colEntry, colExit;
 
         if (_entryExitCols.Length > 0)
         {
@@ -275,8 +271,9 @@ public class MazeGenerator : MonoBehaviour
 
         if (wall.HasFlag(CellWall.South))
         {
-            CreateWall(cellScript, CellWall.South, cellScript.walls, "wallSouth", cellScript.wallSouthPoint.position,
-                cellScript.wallSouthPoint.rotation);
+            if (!(row == rows - 1 && col == colExit))
+                CreateWall(cellScript, CellWall.South, cellScript.walls, "wallSouth", cellScript.wallSouthPoint.position,
+                    cellScript.wallSouthPoint.rotation);
         }
 
         AddFloorRocks(cellScript.floor);
