@@ -135,6 +135,8 @@ public class MazeGenerator : MonoBehaviour
             handle.Complete();
         }
 
+        _cells.Dispose();
+
         if (_entryExitCols.Length > 0)
         {
             var entryExit = _entryExitMazeJob.EntryExitCols[Random.Range(0, _entryExitMazeJob.EntryExitCols.Length)];
@@ -145,11 +147,6 @@ public class MazeGenerator : MonoBehaviour
         else
             colEntry = colExit = -1;
 
-        //_findAWayMazeJob.Execute();
-
-        //CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
-        //_wayResult = _findAWayMazeJob.WayResult.AsArray();
-        _cells.Dispose();
         _entryExitCols.Dispose();
 
         yield return CreateMazeCellsCoRoutine();
@@ -160,42 +157,6 @@ public class MazeGenerator : MonoBehaviour
         CellExitGO = colExit >= 0 ? FindCellGO(rows - 1, colExit) : null;
 
         _walls.Dispose();
-
-        /*
-        var path = navMeshAgent.path;
-        Color c = Color.magenta;
-
-        navMeshAgent.destination = GameObject.Find("cell_9_9").transform.position;
-
-        Debug.Log($"Path Length: {path.corners.Length}");
-
-        if (path.corners.Length >= 2)
-        {
-            switch (path.status)
-            {
-                case NavMeshPathStatus.PathComplete:
-                    c = Color.white;
-                    break;
-                case NavMeshPathStatus.PathInvalid:
-                    c = Color.red;
-                    break;
-                case NavMeshPathStatus.PathPartial:
-                    c = Color.yellow;
-                    break;
-            }
-
-            Vector3 previousCorner = path.corners[0];
-
-            int i = 1;
-            while (i < path.corners.Length)
-            {
-                Vector3 currentCorner = path.corners[i];
-                Debug.DrawLine(previousCorner, currentCorner, c);
-                previousCorner = currentCorner;
-                i++;
-            }
-        }
-        */
 
         //if (_wayResult.IsCreated)
         //    _wayResult.Dispose();
