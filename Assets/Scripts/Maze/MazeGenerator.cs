@@ -153,7 +153,7 @@ public class MazeGenerator : MonoBehaviour
 
         //CellWalls = new NativeArray<CellWall>(_walls, Allocator.Persistent);
         //_wayResult = _findAWayMazeJob.WayResult.AsArray();
-        _walls.Dispose();
+        _cells.Dispose();
         _entryExitCols.Dispose();
 
         yield return CreateMazeCellsCoRoutine();
@@ -163,7 +163,7 @@ public class MazeGenerator : MonoBehaviour
         CellEntryGO = colEntry >= 0 ? FindCellGO(0, colEntry) : null;
         CellExitGO = colExit >= 0 ? FindCellGO(rows - 1, colExit) : null;
 
-        _cells.Dispose();
+        _walls.Dispose();
 
         /*
         var path = navMeshAgent.path;
