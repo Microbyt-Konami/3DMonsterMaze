@@ -20,9 +20,14 @@ public class GameManager : MonoBehaviour
         var player = GameObject.FindGameObjectWithTag("Player");
 
         if (_mazeGenerator.CellEntryGO != null)
-            player.transform.position = _mazeGenerator.CellEntryGO.transform.position;
+        {
+            var cell = _mazeGenerator.CellEntryGO.GetComponent<Cell>();
 
-        //if (_mazeGenerator.CellExitGO != null && _mazeGenerator.CellExitGO.TryGetComponent<Cell>(out var cell))
-        //    cell.HideWalls(CellWall.South);
+            if (cell != null)
+                player.transform.position = cell.floor.transform.position;
+
+            //if (_mazeGenerator.CellExitGO != null && _mazeGenerator.CellExitGO.TryGetComponent<Cell>(out var cell))
+            //    cell.HideWalls(CellWall.South);
+        }
     }
 }

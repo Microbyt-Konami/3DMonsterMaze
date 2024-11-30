@@ -209,7 +209,7 @@ public class MazeGenerator : MonoBehaviour
 
     private void CreateCell(int row, int col, CellWall wall)
     {
-        var position = new Vector3(4 * row, 0, 4 * col);
+        var position = new Vector3(4 * col, 0, 4 * row);
         var cell = Instantiate(cellPrefab, position, Quaternion.identity, MazeGO.transform);
         var cellScript = cell.GetComponent<Cell>();
 
