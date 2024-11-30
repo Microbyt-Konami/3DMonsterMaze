@@ -1,6 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Unity.AI.Navigation;
@@ -9,13 +9,16 @@ using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.AI;
 using static EntryExitMazeJob;
+
 using Random = UnityEngine.Random;
+using Debug = UnityEngine.Debug;
 
 public class MazeGenerator : MonoBehaviour
 {
     public int rows = 10, columns = 10;
     public bool debug;
 
+    [SerializeField] private GameObject mazePrefab;
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private GameObject wallPrefab;
     [SerializeField] private GameObject floorRock1Prefab;
@@ -24,16 +27,18 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private GameObject wallOreGreenPrefab;
     [SerializeField] private GameObject wallOreRedPrefab;
     [SerializeField] private Material[] wallMaterials;
-    [SerializeField] private Transform mazeParent;
+    [SerializeField] private Transform containerParent;
     [SerializeField] private bool hideRoot;
-    [SerializeField] private NavMeshSurface navMeshSurface;
     [SerializeField] private NavMeshAgent navMeshAgent;
 
     [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
     //[field: SerializeField] public NativeArray<CellWall> CellWalls;
+    [field: SerializeField] public GameObject MazeGO { get; private set; }
+    [SerializeField] private NavMeshSurface navMeshSurface;
     [field: SerializeField] public GameObject CellEntryGO { get; private set; }
     [field: SerializeField] public GameObject CellExitGO { get; private set; }
     [SerializeField] private int nWallsMaterialsChanged;
+
 
     private EllerJob _ellerJob;
     private ConnectCellsToWallsJob _wallsJob;
@@ -114,11 +119,6 @@ public class MazeGenerator : MonoBehaviour
         return StartCoroutine(WaitGenerateMazeCoRoutine());
     }
 
-    private void Start()
-    {
-        navMeshSurface = FindAnyObjectByType<NavMeshSurface>();
-    }
-
     private void OnDestroy()
     {
         DisposeMemoryTemporal();
@@ -126,6 +126,8 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator WaitGenerateMazeCoRoutine()
     {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+
         if (!debug)
         {
             var handle = _entryExitMazeJobHandle;
@@ -186,11 +188,16 @@ public class MazeGenerator : MonoBehaviour
         // wallWest.name = "wallWest";
         // wallNorth.name = "wallNorth";
         // wallSouth.name = "wallSouth";
+        stopwatch.Stop();
+        Debug.LogWarning($"Maze generation time: {stopwatch.ElapsedMilliseconds} ms");
         MazeGenerated = true;
     }
 
     private IEnumerator CreateMazeCellsCoRoutine()
     {
+        MazeGO = Instantiate(mazePrefab, Vector3.zero, Quaternion.identity, containerParent);
+        navMeshSurface = MazeGO.GetComponent<NavMeshSurface>();
+
         for (int i = 0, idx = 0; i < rows; i++)
         {
             for (int j = 0; j < columns; j++)
@@ -203,7 +210,7 @@ public class MazeGenerator : MonoBehaviour
     private void CreateCell(int row, int col, CellWall wall)
     {
         var position = new Vector3(4 * row, 0, 4 * col);
-        var cell = Instantiate(cellPrefab, position, Quaternion.identity, mazeParent);
+        var cell = Instantiate(cellPrefab, position, Quaternion.identity, MazeGO.transform);
         var cellScript = cell.GetComponent<Cell>();
 
         cell.name = GetCellName(row, col);
