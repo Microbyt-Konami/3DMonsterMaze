@@ -6,6 +6,7 @@ using UnityEngine.AI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] private bool noGenerateMaze = false;
     private MazeGenerator _mazeGenerator;
 
     IEnumerator Start()
@@ -14,6 +15,9 @@ public class GameManager : MonoBehaviour
 
         // Set target frame rate
         Application.targetFrameRate = 60;
+
+        if (noGenerateMaze)
+            yield break;
 
         yield return _mazeGenerator.GenerateMaze();
 

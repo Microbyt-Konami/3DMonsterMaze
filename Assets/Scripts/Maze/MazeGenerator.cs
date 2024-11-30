@@ -29,7 +29,6 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Material[] wallMaterials;
     [SerializeField] private Transform containerParent;
     [SerializeField] private bool hideRoot;
-    [SerializeField] private NavMeshAgent navMeshAgent;
 
     [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
     //[field: SerializeField] public NativeArray<CellWall> CellWalls;
