@@ -58,9 +58,9 @@ public class MazeGenerator : MonoBehaviour
     {
         MazeGenerated = false;
         nWallsMaterialsChanged = 0;
-        _cells = new NativeArray<CellConnect>(rows * columns, !debug ? Allocator.TempJob : Allocator.Persistent);
-        _walls = new NativeArray<CellWall>(rows * columns, !debug ? Allocator.TempJob : Allocator.Persistent);
-        _entryExitCols = new NativeList<EnTryExitCols>(columns, !debug ? Allocator.TempJob : Allocator.Persistent);
+        _cells = new NativeArray<CellConnect>(rows * columns, Allocator.Persistent /*!debug ? Allocator.TempJob : Allocator.Persistent*/);
+        _walls = new NativeArray<CellWall>(rows * columns, Allocator.Persistent /*!debug ? Allocator.TempJob : Allocator.Persistent*/);
+        _entryExitCols = new NativeList<EnTryExitCols>(columns, Allocator.Persistent /*!debug ? Allocator.TempJob : Allocator.Persistent*/);
 
         _ellerJob = new EllerJob
         {
@@ -188,7 +188,7 @@ public class MazeGenerator : MonoBehaviour
         // wallNorth.name = "wallNorth";
         // wallSouth.name = "wallSouth";
         stopwatch.Stop();
-        Debug.LogWarning($"Maze generation time: {stopwatch.ElapsedMilliseconds} ms");
+        Debug.Log($"Maze generation time: {stopwatch.ElapsedMilliseconds} ms");
         MazeGenerated = true;
     }
 
