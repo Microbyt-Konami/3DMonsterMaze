@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Unity.AI.Navigation;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -33,7 +32,6 @@ public class MazeGenerator : MonoBehaviour
     [field: SerializeField, Header("Debug")] public bool MazeGenerated { get; private set; }
     //[field: SerializeField] public NativeArray<CellWall> CellWalls;
     [field: SerializeField] public GameObject MazeGO { get; private set; }
-    [SerializeField] private NavMeshSurface navMeshSurface;
     [field: SerializeField] public GameObject CellEntryGO { get; private set; }
     [field: SerializeField] public GameObject CellExitGO { get; private set; }
     [SerializeField] private int nWallsMaterialsChanged;
@@ -152,8 +150,6 @@ public class MazeGenerator : MonoBehaviour
 
         yield return CreateMazeCellsCoRoutine();
 
-        navMeshSurface.BuildNavMesh();
-
         CellEntryGO = colEntry >= 0 ? FindCellGO(0, colEntry) : null;
         CellExitGO = colExit >= 0 ? FindCellGO(rows - 1, colExit) : null;
 
@@ -195,7 +191,6 @@ public class MazeGenerator : MonoBehaviour
     private IEnumerator CreateMazeCellsCoRoutine()
     {
         MazeGO = Instantiate(mazePrefab, Vector3.zero, Quaternion.identity, containerParent);
-        navMeshSurface = MazeGO.GetComponent<NavMeshSurface>();
 
         for (int i = 0, idx = 0; i < rows; i++)
         {

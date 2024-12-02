@@ -51,7 +51,7 @@ MonoBehaviour:
   minZ: 0.012
   maxZ: 0.098
   minItems: 0
-  maxItems: 10
+  maxItems: 5
 --- !u!1 &3871291654928299006
 GameObject:
   m_ObjectHideFlags: 0
@@ -319,7 +319,7 @@ MonoBehaviour:
   minZ: 0.012
   maxZ: 0.098
   minItems: 0
-  maxItems: 10
+  maxItems: 5
 --- !u!1 &7507894213289863052
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,7 +332,6 @@ GameObject:
   - component: {fileID: 8306304345047733288}
   - component: {fileID: 2368605441675557615}
   - component: {fileID: 5829701993924585203}
-  - component: {fileID: 7471382477739978908}
   - component: {fileID: 1968111429406976079}
   m_Layer: 0
   m_Name: Wall
@@ -430,22 +429,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!208 &7471382477739978908
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7507894213289863052}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.5, y: 0.5, z: 0.5}
-  m_MoveThreshold: 0.1
-  m_Carve: 0
-  m_CarveOnlyStationary: 1
-  m_Center: {x: 0, y: 0, z: 0}
-  m_TimeToStationary: 0.5
 --- !u!54 &1968111429406976079
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -579,7 +562,7 @@ MonoBehaviour:
   minZ: 0.012
   maxZ: 0.098
   minItems: 0
-  maxItems: 10
+  maxItems: 5
 --- !u!1 &9066573538998312326
 GameObject:
   m_ObjectHideFlags: 0

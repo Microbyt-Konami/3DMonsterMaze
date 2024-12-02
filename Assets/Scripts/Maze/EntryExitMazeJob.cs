@@ -13,7 +13,7 @@ public struct EntryExitMazeJob : IJob
 
     public void Execute()
     {
-        var nodes = new NativeArray<int>(Rows, Allocator.Temp);
+        var nodes = new NativeArray<int>(Rows, Allocator.Persistent);
         var row = 0;
         var colLast = Columns - 1;
         var rowLast = Rows - 1;

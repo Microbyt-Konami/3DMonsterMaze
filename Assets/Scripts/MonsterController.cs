@@ -1,11 +1,8 @@
 using StarterAssets;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class MonsterController : MonoBehaviour
 {
-    [SerializeField] private NavMeshAgent navMeshAgent;
-
     private GameObject _player;
     private FirstPersonController _playerController;
     private CharacterController _characterController;
@@ -23,6 +20,6 @@ public class MonsterController : MonoBehaviour
     {
         // Rex siempre se mueve a un ritmo más lento que el jugador. Cuando el jugador se mueve, Rex se mueve a la mitad de la velocidad del jugador. Cuando el jugador está parado, Rex se mueve a un cuarto de la velocidad de movimiento del jugado
         //navMeshAgent.speed = _characterController.velocity.x == 0 ? _playerController.MoveSpeed / 4 : _playerController.MoveSpeed / 2;
-        navMeshAgent.SetDestination(_player.transform.position);
+        //navMeshAgent.SetDestination(_player.transform.position);
     }
 }
