@@ -1,39 +1,148 @@
+using System.CodeDom;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Mathematics;
 using Unity.Jobs;
 
 /*
- La generación del laberinto se realiza mediante la ejecución del código en BASIC 
-después de activar el modo rápido del ZX81 mediante el comando FAST. Por lo 
-general, este proceso tarda aproximadamente 30 segundos en completarse, 
-creando un laberinto de dimensiones 16x18 celdas.
-El algoritmo de generación del laberinto es teóricamente simple, como se explica 
-en el artículo de Soft Tango UK [23]. Inicialmente, se llenan todas las celdas con 
-paredes. A continuación, se trazan pasillos de forma aleatoria, escogiendo una 
-dirección (norte, sur, este u oeste) y una longitud (de 1 a 6 celdas), ambos 
-componentes aleatorios para cada pasillo. El primer pasillo siempre se inicia en 
-la posición de inicio del jugador, ubicada en la esquina sureste del mapa. 
-Después, cada nuevo pasillo se inicia al final del anterior. El código también 
-asegura que no haya pasillos con un ancho mayor de una celda, y que no se 
-tracen pasillos en las paredes limítrofes del norte, sur, este u oeste.
-El código continúa creando pasillos hasta que se han intentado convertir 800 
-celdas en pasillos. Aunque esto supone crear pasillos en más celdas de las que 
-hay en el laberinto (240 celdas), se asume que se recorrerán algunos pasillos 
-varias veces o se abandonarán algunos trazos debido a las restricciones 
-anteriores. Una vez generado el laberinto, el código elige aleatoriamente una 
-posición para la salida, buscando una celda vacía en las siete filas más al norte 
-y, si es necesario, rellenando las celdas adyacentes para asegurarse de que la 
-salida se encuentra al final de un callejón sin salida. No obstante, debido a la 
-lógica utilizada para colocar la salida, es posible que la salida se encuentre en 
-un túnel cerrado, lo que impide ganar el juego. No se ha implementado código 
-para prevenir esta situación, aunque es poco común.
-Por último, el código posiciona a Rex de forma aleatoria en las cinco filas más 
-al norte del laberinto. Cabe destacar que, al final del juego, si Rex ha comido al 
-jugador, el monstruo se posiciona aleatoriamente en las trece filas más al norte 
-del laberinto, lo
+ *  El laberinto siempre consta de 18 filas por 16 columnas.
+ *  La generación del laberinto se produce durante las "nieblas del tiempo" con la máquina en modo FAST y tarda unos 30 segundos en el ZX81. 
+ *  El laberinto se mapea en la memoria y aparece como se muestra a continuación. 
+ *  
+ *  La lógica de generación del laberinto es simple pero efectiva y da como resultado cada vez un laberinto que es diferente pero similar en apariencia al anterior, con muchos pasajes y aberturas entrecruzados. 
+ *  Esto tiene el efecto de hacer que sea más fácil para Rex encontrarte y mantener el laberinto difícil de resolver y que parezca más grande de lo que es.
+ *  
+ *  La generación del laberinto comienza llenando todas las casillas con una pared sólida. Luego, corta pasajes al azar eligiendo una dirección (norte, sur, este u oeste) y una longitud (1 a 6). 
+ *  Cada pasaje que se corta comienza al final del último. El primer pasaje siempre comienza en la posición inicial del jugador (que se muestra en el mapa anterior como "P"). 
+ *  La posición inicial del jugador siempre está en el mismo lugar en el extremo sureste del mapa, mirando hacia el oeste.
+ *  
+ *  La lógica se asegura de que el laberinto nunca contenga un pasaje de más de una casilla de ancho. Para ello, nunca permite un bloque de 4 casillas vacías juntas
+ *  
+ *  La única otra regla que el cortador de pasajes observa es que no puede cortar en las paredes más al oeste, norte o sur. La pared que está más al este del laberinto sí se corta, pero debido a la naturaleza 
+ *  envolvente de la forma en que el mapa se almacena en la memoria, la pared más al oeste también es la pared más al este, por lo que, en efecto, el laberinto siempre está rodeado por una pared sólida e 
+ *  ininterrumpida por todos los lados.
+ *  
+ *  El código corta pasajes de forma repetitiva hasta que intenta cortar 800 fichas, y luego considera que el laberinto está completo. No hay ningún otro código que garantice que el laberinto se complete 
+ *  satisfactoriamente, simplemente se supone que después de 800 fichas debería estarlo. El laberinto solo contiene 240 fichas cortables, por lo que la cifra de 800 supone que se deben volver a cortar pasajes existentes 
+ *  o cortes de pasajes abandonados debido a golpes en el borde o la regla de "no se permiten bloques de 4" descrita anteriormente.
+ *  
+ *  Una vez que se completa la generación del laberinto, el juego elige una ubicación para la salida. Lo hace utilizando un enfoque un tanto torpe y caótico. Dentro de las 7 filas más al norte, elige una ficha al azar. 
+ *  Si esta ficha es un trozo de pared, elige otra. Esto continúa hasta que encuentra una ficha vacía y allí coloca la salida (mostrada como "H" en el laberinto anterior). Para asegurarse de que la salida esté siempre 
+ *  al final de un callejón sin salida, luego llena todos los espacios vacíos alrededor de la ficha elegida hasta que solo quede 1. Lo hace en el orden de prioridad norte, este, oeste y sur.
+ *  
+ *  Lamentablemente, debido a la lógica rudimentaria que se utiliza para colocar la salida, a veces ocurre que la salida termina en un túnel cerrado y no se puede ganar el juego. No existe ningún código que impida 
+ *  esto y, aunque es poco frecuente, sucede.
+ *  
+ *  Por último, el Rex se coloca aleatoriamente en las 5 filas más al norte. Ten en cuenta que cuando el juego termina después de que Rex se come al jugador, Rex se colocará aleatoriamente en las 13 filas más al norte y, 
+ *  por lo tanto, puede comenzar mucho más cerca del jugador. Debido al error mencionado anteriormente que a veces crea un túnel sellado, es posible que Rex termine dentro de él y nunca pueda atraparte.
+ *  
+ *  La lógica se asegura de que el laberinto nunca contenga un pasaje de más de una casilla de ancho. Para ello, nunca permite un bloque de 4 casillas vacías juntas, como se muestra a continuación: *
  */
 
-public struct GenerateMazeJob
+public struct GenerateMazeJob : IJob
 {
+    [ReadOnly] public uint Seed;
+    /// <summary>
+    /// No se cuenta La pared que esta más al norte y la de mas al sur. Son las filas que pueden hacer camino
+    /// </summary>
+    [ReadOnly] public int Rows;
+    /// <summary>
+    /// No se cuenta La pared que esta más al este y la de mas al oeste. Son las columnas que pueden hacer camino.
+    /// </summary>
+    [ReadOnly] public int Columns;
+    // En el original de 18 rows x 16 columns, el valor son 800. El laberinto solo contiene 240 fichas cortables, 
+    /// por lo que la cifra de 800 supone que se deben volver a cortar pasajes existentes o cortes de pasajes abandonados debido a golpes en el borde o la regla de "no se permiten bloques de 4" descrita anteriormente.
+    [ReadOnly] public int CellsToCut;
+    public NativeArray<CellWall> Walls;
+    /// <summary>
+    /// Default 1
+    /// </summary>
+    public int LongMinToCut;
+    // Default 6
+    public int LongMaxToCut;
+    public int CellExit;
 
+    public GenerateMazeJob(uint seed, int rows, int columns, int celdasACorta, Allocator allocator = Allocator.TempJob)
+    {
+        Seed = seed;
+        Rows = rows;
+        Columns = columns;
+        CellsToCut = celdasACorta;
+        Walls = new NativeArray<CellWall>(rows * columns + 1, allocator);
+        CellExit = 0;
+        LongMinToCut = 1;
+        LongMaxToCut = 6;
+    }
+
+    // 16x15 => 800
+    // RxC => X
+    // X=800*rows*columns/16*15
+    public GenerateMazeJob(uint seed, int rows, int columns, Allocator allocator = Allocator.TempJob) : this(seed, rows, columns, (int)(800L * rows * columns / (16L * 15L))) { }
+
+    public void Execute()
+    {
+        var random = new Random(Seed);
+
+        // La generación del laberinto comienza llenando todas las casillas con una pared sólida.
+        for (int i = 0; i < Walls.Length; i++)
+            Walls[i] = CellWall.AllWalls;
+
+        // La posición inicial del jugador siempre está en el mismo lugar en el extremo sureste del mapa, mirando hacia el oeste.
+        int row = Rows - 1, col = Columns - 1;
+        int longitud = 0, deltaX, deltaY, newX, newY;
+        Direction direction;
+        CellWall wall;
+
+        for (int count = CellsToCut; count > 0;)
+        {
+            // corta pasajes al azar eligiendo una dirección (norte, sur, este u oeste) y una longitud (1 a 6). 
+            direction = (Direction)random.NextInt((int)Direction.End);
+            switch (direction)
+            {
+                case Direction.North:
+                    deltaX = 0;
+                    deltaY = -1;
+                    wall = CellWall.North;
+                    break;
+                case Direction.South:
+                    deltaX = 0;
+                    deltaY = 1;
+                    wall = CellWall.South;
+                    break;
+                case Direction.East:
+                    deltaX = 1;
+                    deltaY = 0;
+                    wall = CellWall.East;
+                    break;
+                case Direction.West:
+                    deltaX = -1;
+                    deltaY = 0;
+                    wall = CellWall.West;
+                    break;
+                default:
+                    deltaX = deltaY = 0;
+                    break;
+            }
+            longitud = random.NextInt(LongMinToCut, LongMaxToCut + 1);
+            for (int i = 0; i < longitud; i++)
+            {
+                // La lógica se asegura de que el laberinto nunca contenga un pasaje de más de una casilla de ancho. Para ello, nunca permite un bloque de 4 casillas vacías juntas
+                /*
+                        W W W   . W W
+                        W W W   W W W
+                        W W W   W W W
+                 */
+                newX = col + deltaX;
+                newY = row + deltaY;
+                if (newX < 0 || newX >= Columns)
+                    break;
+                if (newY < 0 || newY >= Rows)
+                    break;
+
+            }
+        }
+
+    }
+
+    private enum Direction { North, South, East, West, End = West }
 }
