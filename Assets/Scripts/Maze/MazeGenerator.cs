@@ -55,6 +55,16 @@ public class MazeGenerator : MonoBehaviour
     public Coroutine GenerateMaze()
     {
         MazeGenerated = false;
+
+        var job = new GenerateMazeJob((uint)Random.Range(int.MinValue, int.MaxValue), rows, columns, Allocator.TempJob);
+
+        job.Execute();
+
+        var wData= job.Walls.AsNativeArray<byte>().ToArray();
+        var walls = new BitArray(job.Walls.Length);
+
+        //job.Walls.co
+
         nWallsMaterialsChanged = 0;
         _cells = new NativeArray<CellConnect>(rows * columns, Allocator.Persistent /*!debug ? Allocator.TempJob : Allocator.Persistent*/);
         _walls = new NativeArray<CellWall>(rows * columns, Allocator.Persistent /*!debug ? Allocator.TempJob : Allocator.Persistent*/);
@@ -186,6 +196,11 @@ public class MazeGenerator : MonoBehaviour
         stopwatch.Stop();
         Debug.Log($"Maze generation time: {stopwatch.ElapsedMilliseconds} ms");
         MazeGenerated = true;
+    }
+
+    private void LogMazeCreated(BitArray maze)
+    {
+
     }
 
     private IEnumerator CreateMazeCellsCoRoutine()

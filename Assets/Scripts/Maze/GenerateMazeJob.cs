@@ -100,7 +100,7 @@ public struct GenerateMazeJob : IJob
             newX = rowCurrent;
             newY = colCurrent;
             // corta pasajes al azar eligiendo una dirección (norte, sur, este u oeste) y una longitud (1 a 6). 
-            (Direction direction, int deltaX, int deltaY) = GetRandomDirection();
+            (Direction direction, int deltaX, int deltaY) = GetRandomDirection(rowCurrent, colCurrent);
 
             longitud = random.NextInt(LongMinToCut, LongMaxToCut + 1);
             for (int i = 0; i < longitud; i++)
@@ -122,18 +122,18 @@ public struct GenerateMazeJob : IJob
         }
     }
 
-    private (Direction direction, int deltaX, int deltaY) GetRandomDirection()
+    private (Direction direction, int deltaX, int deltaY) GetRandomDirection(int row, int col)
     {
         int deltaX, deltaY;
         var direction = (Direction)random.NextInt((int)Direction.End);
 
-        if (rowCurrent == 0 && direction == Direction.North)
+        if (row == 0 && direction == Direction.North)
             direction = Direction.South;
-        else if (rowCurrent == Rows - 1 && direction == Direction.South)
+        else if (row == Rows - 1 && direction == Direction.South)
             direction = Direction.North;
-        else if (colCurrent == 0 && direction == Direction.West)
+        else if (col == 0 && direction == Direction.West)
             direction = Direction.East;
-        else if (colCurrent == Columns - 1 && direction == Direction.East)
+        else if (col == Columns - 1 && direction == Direction.East)
             direction = Direction.West;
 
         switch (direction)
