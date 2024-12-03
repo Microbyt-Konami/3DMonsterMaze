@@ -41,19 +41,20 @@ using Unity.Jobs;
 
 public struct GenerateMazeJob : IJob
 {
-    [ReadOnly] public uint Seed;
+    [ReadOnly] public readonly uint Seed;
+    [ReadOnly] public readonly bool Debug;
     /// <summary>
     /// No se cuenta La pared que esta más al norte y la de mas al sur. Son las filas que pueden hacer camino
     /// </summary>
-    [ReadOnly] public int Rows;
+    [ReadOnly] public readonly int Rows;
     /// <summary>
     /// No se cuenta La pared que esta más al este y la de mas al oeste. Son las columnas que pueden hacer camino.
     /// </summary>
-    [ReadOnly] public int Columns;
+    [ReadOnly] public readonly int Columns;
     // En el original de 18 rows x 16 columns, el valor son 800. El laberinto solo contiene 240 fichas cortables, 
     /// por lo que la cifra de 800 supone que se deben volver a cortar pasajes existentes o cortes de pasajes abandonados debido a golpes en el borde o la regla de "no se permiten bloques de 4" descrita anteriormente.
     [ReadOnly] public int CellsToCut;
-    public NativeArray<CellWall> Walls;
+    public NativeBitArray Walls;
     /// <summary>
     /// Default 1
     /// </summary>
@@ -62,16 +63,20 @@ public struct GenerateMazeJob : IJob
     public int LongMaxToCut;
     public int CellExit;
 
+    private Random random;
+
     public GenerateMazeJob(uint seed, int rows, int columns, int celdasACorta, Allocator allocator = Allocator.TempJob)
     {
         Seed = seed;
         Rows = rows;
         Columns = columns;
         CellsToCut = celdasACorta;
-        Walls = new NativeArray<CellWall>(rows * columns + 1, allocator);
+        Walls = new NativeBitArray(rows * columns + 1, allocator);
         CellExit = 0;
         LongMinToCut = 1;
         LongMaxToCut = 6;
+        Debug = false;
+        random = new Random(Seed);
     }
 
     // 16x15 => 800
@@ -81,68 +86,108 @@ public struct GenerateMazeJob : IJob
 
     public void Execute()
     {
-        var random = new Random(Seed);
-
         // La generación del laberinto comienza llenando todas las casillas con una pared sólida.
-        for (int i = 0; i < Walls.Length; i++)
-            Walls[i] = CellWall.AllWalls;
+        Walls.SetBits(0, true, Walls.Length);
 
         // La posición inicial del jugador siempre está en el mismo lugar en el extremo sureste del mapa, mirando hacia el oeste.
-        int row = Rows - 1, col = Columns - 1;
-        int longitud = 0, deltaX, deltaY, newX, newY;
-        Direction direction;
-        CellWall wall;
+        int rowCurrent = Rows - 1;
+        int colCurrent = Columns - 1;
 
-        for (int count = CellsToCut; count > 0;)
+        int longitud = 0, newX, newY;
+
+        for (int count = CellsToCut; count > 0; count -= longitud)
         {
+            newX = rowCurrent;
+            newY = colCurrent;
             // corta pasajes al azar eligiendo una dirección (norte, sur, este u oeste) y una longitud (1 a 6). 
-            direction = (Direction)random.NextInt((int)Direction.End);
-            switch (direction)
-            {
-                case Direction.North:
-                    deltaX = 0;
-                    deltaY = -1;
-                    wall = CellWall.North;
-                    break;
-                case Direction.South:
-                    deltaX = 0;
-                    deltaY = 1;
-                    wall = CellWall.South;
-                    break;
-                case Direction.East:
-                    deltaX = 1;
-                    deltaY = 0;
-                    wall = CellWall.East;
-                    break;
-                case Direction.West:
-                    deltaX = -1;
-                    deltaY = 0;
-                    wall = CellWall.West;
-                    break;
-                default:
-                    deltaX = deltaY = 0;
-                    break;
-            }
+            (Direction direction, int deltaX, int deltaY) = GetRandomDirection();
+
             longitud = random.NextInt(LongMinToCut, LongMaxToCut + 1);
             for (int i = 0; i < longitud; i++)
             {
                 // La lógica se asegura de que el laberinto nunca contenga un pasaje de más de una casilla de ancho. Para ello, nunca permite un bloque de 4 casillas vacías juntas
-                /*
-                        W W W   . W W
-                        W W W   W W W
-                        W W W   W W W
-                 */
-                newX = col + deltaX;
-                newY = row + deltaY;
+                if (Has4CellCut(newY, newX))
+                    break;
+
+                rowCurrent = newY;
+                colCurrent = newX;
+                SetWall(rowCurrent, colCurrent);
+                newX = colCurrent + deltaX;
+                newY = rowCurrent + deltaY;
                 if (newX < 0 || newX >= Columns)
                     break;
                 if (newY < 0 || newY >= Rows)
                     break;
-
             }
         }
-
     }
+
+    private (Direction direction, int deltaX, int deltaY) GetRandomDirection()
+    {
+        int deltaX, deltaY;
+        var direction = (Direction)random.NextInt((int)Direction.End);
+
+        if (rowCurrent == 0 && direction == Direction.North)
+            direction = Direction.South;
+        else if (rowCurrent == Rows - 1 && direction == Direction.South)
+            direction = Direction.North;
+        else if (colCurrent == 0 && direction == Direction.West)
+            direction = Direction.East;
+        else if (colCurrent == Columns - 1 && direction == Direction.East)
+            direction = Direction.West;
+
+        switch (direction)
+        {
+            case Direction.North:
+                deltaX = 0;
+                deltaY = -1;
+                break;
+            case Direction.South:
+                deltaX = 0;
+                deltaY = 1;
+                break;
+            case Direction.East:
+                deltaX = 1;
+                deltaY = 0;
+                break;
+            case Direction.West:
+                deltaX = -1;
+                deltaY = 0;
+                break;
+            default:
+                deltaX = deltaY = 0;
+                break;
+        }
+
+        return (direction, deltaX, deltaY);
+    }
+
+    private int GetIdx(int row, int col) => row * Columns + col;
+
+    private void SetWall(int row, int col, bool value = true) => Walls.Set(GetIdx(row, col), value);
+
+    private bool HasWall(int row, int col) => (row < 0 || row > Rows) || (col < 0 || col > Columns) || Walls.IsSet(GetIdx(row, col));
+
+    private int CountHWalls(int row, int col, int n)
+        => ((row < 0 || row > Rows) || (col < 0 || col > Columns))
+            ? 0
+            : Walls.CountBits(GetIdx(row, col), math.min(n, Columns - col));
+
+    private bool Has4CellCut(int row, int col)
+        /*
+         *    0       1       2       3       4
+            W W W   . . W   W . .   W W W   W W W
+            W * W   . * W   W * .   . * W   W * .
+            W W W   W W W   W W W   . . W   W . .
+        */
+
+
+        =>
+            CountHWalls(row - 1, col - 1, 2) == 2 && HasWall(row, col - 1)   // Caso 1
+            || CountHWalls(row - 1, col, 2) == 2 && HasWall(row, col + 1)   // Caso 2
+            || CountHWalls(row + 1, col - 1, 2) == 2 && HasWall(row, col - 1)   // Caso 3
+            || CountHWalls(row + 1, col, 2) == 2 && HasWall(row, col + 1)   // Caso 4
+            ;
 
     private enum Direction { North, South, East, West, End = West }
 }
