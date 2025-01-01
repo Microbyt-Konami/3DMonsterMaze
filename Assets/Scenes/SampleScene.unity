@@ -700,7 +700,6 @@ MonoBehaviour:
   hideRoot: 1
   <MazeGenerated>k__BackingField: 0
   <MazeGO>k__BackingField: {fileID: 0}
-  navMeshSurface: {fileID: 0}
   <CellEntryGO>k__BackingField: {fileID: 0}
   <CellExitGO>k__BackingField: {fileID: 0}
   nWallsMaterialsChanged: 0
@@ -963,7 +962,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2acf4b04ca8d1243b0920acb2f3f81a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  noGenerateMaze: 0
+  noGenerateMaze: 1
   monsterPrefab: {fileID: 8246293058701903615, guid: f637ba8649ce7a54e894706528676609, type: 3}
 --- !u!4 &1546634521
 Transform:
@@ -1401,7 +1400,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9005220659476430818, guid: 2d3a85ecde41a8246a79669975912b74, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.375
+      value: 1.738
       objectReference: {fileID: 0}
     - target: {fileID: 9005220659476430818, guid: 2d3a85ecde41a8246a79669975912b74, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1466,7 +1465,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1885660172662761556, guid: dea9adfb2bce44f47989f6aa0a6bc37b, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6217214904588165960, guid: dea9adfb2bce44f47989f6aa0a6bc37b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1616,7 +1615,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8997996947095583982, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.363
       objectReference: {fileID: 0}
     - target: {fileID: 8997996947095583982, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1707,7 +1706,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8762286023885395322, guid: 9c489a8547f4d9e4387da15a4ff82c81, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.375
+      value: 1.738
       objectReference: {fileID: 0}
     - target: {fileID: 8762286023885395322, guid: 9c489a8547f4d9e4387da15a4ff82c81, type: 3}
       propertyPath: m_LocalPosition.z
