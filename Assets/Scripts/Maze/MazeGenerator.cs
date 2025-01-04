@@ -17,6 +17,7 @@ public class MazeGenerator : MonoBehaviour
     public int rows = 10, columns = 10;
     public bool debug;
 
+    [serializeField] private bool generateOnStart = false;
     [SerializeField] private GameObject mazePrefab;
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private GameObject wallPrefab;
@@ -60,7 +61,7 @@ public class MazeGenerator : MonoBehaviour
 
         job.Execute();
 
-        var wData= job.Walls.AsNativeArray<byte>().ToArray();
+        var wData = job.Walls.AsNativeArray<byte>().ToArray();
         var walls = new BitArray(job.Walls.Length);
 
         //job.Walls.co
