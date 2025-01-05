@@ -17,7 +17,7 @@ public class MazeGenerator : MonoBehaviour
     public int rows = 10, columns = 10;
     public bool debug;
 
-    [serializeField] private bool generateOnStart = false;
+    [SerializeField] private bool generateOnStart = false;
     [SerializeField] private GameObject mazePrefab;
     [SerializeField] private GameObject cellPrefab;
     [SerializeField] private GameObject wallPrefab;
@@ -52,6 +52,12 @@ public class MazeGenerator : MonoBehaviour
     private JobHandle _entryExitMazeJobHandle;
 
     private int colEntry, colExit;
+
+    IEnumerator Start()
+    {
+        if (generateOnStart)
+            yield return GenerateMaze();
+    }
 
     public Coroutine GenerateMaze()
     {
