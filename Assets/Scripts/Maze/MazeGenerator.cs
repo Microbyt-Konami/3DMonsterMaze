@@ -55,13 +55,16 @@ public class MazeGenerator : MonoBehaviour
     public Coroutine GenerateMaze()
     {
         MazeGenerated = false;
+        /*
 
         var job = new GenerateMazeJob((uint)Random.Range(int.MinValue, int.MaxValue), rows, columns, Allocator.TempJob);
 
         job.Execute();
 
-        var wData= job.Walls.AsNativeArray<byte>().ToArray();
+        //var wData= job.Walls.AsNativeArray<byte>().ToArray();
         var walls = new BitArray(job.Walls.Length);
+
+        */
 
         //job.Walls.co
 
@@ -160,7 +163,7 @@ public class MazeGenerator : MonoBehaviour
 
         yield return CreateMazeCellsCoRoutine();
 
-        CellEntryGO = colEntry >= 0 ? FindCellGO(0, colEntry) : null;
+        CellEntryGO = colEntry >= 0 ? FindCellGO(0, colEntry) : FindCellGO(0, 0);
         CellExitGO = colExit >= 0 ? FindCellGO(rows - 1, colExit) : null;
 
         _walls.Dispose();
