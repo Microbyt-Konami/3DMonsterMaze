@@ -26,9 +26,6 @@ public class GameManager : MonoBehaviour
 
         yield return _mazeGenerator.GenerateMaze();
 
-        player.gameObject.SetActive(true);
-
-
         if (_mazeGenerator.CellEntryGO != null)
         {
             var cell = _mazeGenerator.CellEntryGO.GetComponent<Cell>();
@@ -42,5 +39,7 @@ public class GameManager : MonoBehaviour
             if (_mazeGenerator.CellExitGO != null)
                 Instantiate(monsterPrefab, _mazeGenerator.CellExitGO.transform.position, Quaternion.identity);
         }
+
+        player.gameObject.SetActive(true);
     }
 }
