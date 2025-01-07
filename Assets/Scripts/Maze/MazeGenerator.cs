@@ -210,16 +210,19 @@ public class MazeGenerator : MonoBehaviour
     {
         MazeGO = Instantiate(mazePrefab, Vector3.zero, Quaternion.identity, containerParent);
 
+        var maze = MazeGO.GetComponent<Maze>();
+
+        maze.cells = new Cell[rows, columns];
         for (int i = 0, idx = 0; i < rows; i++)
         {
             for (int j = 0; j < columns; j++)
-                CreateCell(i, j, _walls[idx++]);
+                maze.cells[i, j] = CreateCell(i, j, _walls[idx++]);
         }
 
-        yield break;
+        yield return CellsOcculide();
     }
 
-    private void CreateCell(int row, int col, CellWall wall)
+    private Cell CreateCell(int row, int col, CellWall wall)
     {
         var position = new Vector3(4 * col, 0, 4 * row);
         var cell = Instantiate(cellPrefab, position, Quaternion.identity, MazeGO.transform);
@@ -259,6 +262,8 @@ public class MazeGenerator : MonoBehaviour
         AddFloorRocks(cellScript.floor);
         if (hideRoot)
             cellScript.root.SetActive(false);
+
+        return cellScript;
     }
 
     private string GetCellName(int row, int col)
@@ -266,16 +271,23 @@ public class MazeGenerator : MonoBehaviour
         return $"cell_{row}_{col}";
     }
 
-    private GameObject FindCellGO(int row, int col) => GameObject.Find(GetCellName(row, col));
+    private GameObject FindCellGO(int row, int col)
+    {
+        //return GameObject.Find(GetCellName(row, col));
+
+        var maze = MazeGO.GetComponent<Maze>();
+
+        return maze.GetCell(row, col)?.gameObject;
+    }
 
     // Replaced the TODO comment with the implementation
-    private Wall CreateWall(Cell cell, CellWall cellWall, Transform wallParent, string wallName,
-        Vector3 wallPosition, Quaternion wallRotation)
+    private Wall CreateWall(Cell cell, CellWall cellWall, Transform wallParent, string wallName, Vector3 wallPosition, Quaternion wallRotation)
     {
         var wallGO = Instantiate(wallPrefab, wallPosition, wallRotation, wallParent);
         var wall = wallGO.GetComponent<Wall>();
 
         wallGO.name = wallName;
+        wall.cellWall = cellWall;
         AddWallsOre(wall);
         if (Random.value < 0.05f)
             ChangeWallMaterial(cell, wall);
@@ -324,6 +336,36 @@ public class MazeGenerator : MonoBehaviour
 
             item.name = $"{itemPrefab.name}_{i}";
         }
+    }
+
+    private IEnumerator CellsOcculide()
+    {
+        var walls = MazeGO.GetComponentsInChildren<Wall>();
+
+        foreach (var wall in walls)
+        {
+            var cell = wall.GetCell();
+            var cellWalls = wall.cellWall;
+
+            CellsOcculide(wall, cell, cellWalls);
+        }
+
+        yield return null;
+    }
+
+    private void CellsOcculide(Wall wall, Cell cell, CellWall direction)
+    {
+        var maze = MazeGO.GetComponent<Maze>();
+        var cells = new List<Cell>();
+        var cellCurrent = maze.GetCell(cell, direction);
+
+        while (cellCurrent != null && !cellCurrent.HasWall(direction))
+        {
+            cells.Add(cellCurrent);
+            cellCurrent = maze.GetCell(cellCurrent, direction);
+        }
+
+        wall.SetCellsToOcclude(cells.ToArray());
     }
 
     private void DisposeMemoryTemporal()
