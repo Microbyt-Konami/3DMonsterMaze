@@ -2,7 +2,19 @@ using UnityEngine;
 
 public class Maze : MonoBehaviour
 {
+    [SerializeField] private MeshRenderer floorRenderer;
+
+    public int rows, columns;
     public Cell[,] cells;
+
+    public void UpdateFloor()
+    {
+        var material = new Material(floorRenderer.material);
+
+        material.mainTextureScale = new Vector2(columns, rows);
+        floorRenderer.material = material;
+        floorRenderer.transform.localScale = new Vector3(floorRenderer.transform.localScale.x * columns, floorRenderer.transform.localScale.y, floorRenderer.transform.localScale.z * rows);
+    }
 
     public Cell GetCell(int row, int column)
     {

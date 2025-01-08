@@ -212,14 +212,18 @@ public class MazeGenerator : MonoBehaviour
 
         var maze = MazeGO.GetComponent<Maze>();
 
+        maze.rows = rows;
+        maze.columns = columns;
         maze.cells = new Cell[rows, columns];
+
+        maze.UpdateFloor();
         for (int i = 0, idx = 0; i < rows; i++)
         {
             for (int j = 0; j < columns; j++)
                 maze.cells[i, j] = CreateCell(i, j, _walls[idx++]);
         }
 
-        yield return CellsOcculide();
+        yield return null;
     }
 
     private Cell CreateCell(int row, int col, CellWall wall)
@@ -259,7 +263,7 @@ public class MazeGenerator : MonoBehaviour
                     cellScript.wallSouthPoint.rotation);
         }
 
-        AddFloorRocks(cellScript.floor);
+        //AddFloorRocks(cellScript.floor);
         if (hideRoot)
             cellScript.root.SetActive(false);
 
@@ -288,7 +292,7 @@ public class MazeGenerator : MonoBehaviour
 
         wallGO.name = wallName;
         wall.cellWall = cellWall;
-        AddWallsOre(wall);
+        //AddWallsOre(wall);
         if (Random.value < 0.05f)
             ChangeWallMaterial(cell, wall);
 
@@ -336,36 +340,6 @@ public class MazeGenerator : MonoBehaviour
 
             item.name = $"{itemPrefab.name}_{i}";
         }
-    }
-
-    private IEnumerator CellsOcculide()
-    {
-        var walls = MazeGO.GetComponentsInChildren<Wall>();
-
-        foreach (var wall in walls)
-        {
-            var cell = wall.GetCell();
-            var cellWalls = wall.cellWall;
-
-            CellsOcculide(wall, cell, cellWalls);
-        }
-
-        yield return null;
-    }
-
-    private void CellsOcculide(Wall wall, Cell cell, CellWall direction)
-    {
-        var maze = MazeGO.GetComponent<Maze>();
-        var cells = new List<Cell>();
-        var cellCurrent = maze.GetCell(cell, direction);
-
-        while (cellCurrent != null && !cellCurrent.HasWall(direction))
-        {
-            cells.Add(cellCurrent);
-            cellCurrent = maze.GetCell(cellCurrent, direction);
-        }
-
-        wall.SetCellsToOcclude(cells.ToArray());
     }
 
     private void DisposeMemoryTemporal()
