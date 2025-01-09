@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floorRenderer: {fileID: 1492775375014936676}
+  wallPrefab: {fileID: 3196477341961566722, guid: 4e8adec3a39902746b4a0d1d4eb7ce66, type: 3}
   rows: 0
   columns: 0
 --- !u!1 &5799876964074297755
@@ -66,7 +67,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1496699968957163203
 Transform:
   m_ObjectHideFlags: 0

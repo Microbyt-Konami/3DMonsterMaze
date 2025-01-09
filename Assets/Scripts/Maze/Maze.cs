@@ -3,6 +3,7 @@ using UnityEngine;
 public class Maze : MonoBehaviour
 {
     [SerializeField] private MeshRenderer floorRenderer;
+    [SerializeField] private GameObject wallPrefab;
 
     public int rows, columns;
     public Cell[,] cells;
@@ -13,7 +14,7 @@ public class Maze : MonoBehaviour
 
         //material.mainTextureScale = new Vector2(columns, rows);
         //floorRenderer.material = material;
-        floorRenderer.transform.localScale = new Vector3(floorRenderer.transform.localScale.x * columns, floorRenderer.transform.localScale.y, floorRenderer.transform.localScale.z * rows);
+        floorRenderer.transform.localScale = new Vector3(4 * columns, 0.1f, 4 * rows);
     }
 
     public Cell GetCell(int row, int column)
