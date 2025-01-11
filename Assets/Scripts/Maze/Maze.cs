@@ -14,9 +14,14 @@ public class Maze : MonoBehaviour
 
     private GameObject _floorGO;
 
+    public Vector3 GetPosition(int row, int col) => new Vector3(-cellSize.x * col, 0, cellSize.y * row);
+
     public void AddFloor()
     {
-        _floorGO = Instantiate(floorPrefab, Vector3.zero, Quaternion.identity, transform);
+        var position = new Vector3(-cellSize.x * columns / 2.0f + cellSize.x / 2.0f, -cellSize.y / 2.0f - thickness / 2.0f, cellSize.z * rows / 2.0f);
+
+        _floorGO = Instantiate(floorPrefab, position, Quaternion.identity, transform);
+        _floorGO.name = $"Floor_{rows}_{columns}";
         _floorGO.transform.localScale = new Vector3(cellSize.x * columns, thickness, cellSize.z * rows);
 
         var floorRenderer = _floorGO.GetComponent<MeshRenderer>();
@@ -26,12 +31,16 @@ public class Maze : MonoBehaviour
         floorRenderer.material = material;
     }
 
-    public void AddWallV(int row, int column, int ncell = 1, Material material = null)
+    public void AddWall(int row, int col, Quaternion rotation, Material material = null)
     {
-        var position = new Vector3((row / rows - (rows / 2)) * cellSize.x, cellSize.x / 2, (column / columns - (columns / 2)) * cellSize.y);
-        var wall = Instantiate(wallPrefab, position, Quaternion.identity, transform);
+        var position = GetPosition(row, col);
+        var wallGO = Instantiate(wallPrefab, position, rotation, transform);
+        var wall = wallGO.GetComponent<Wall>();
 
-        wall.transform.localScale = new Vector3(1, 1, cellSize.x * ncell);
+        if (material != null && wall != null)
+            wall.SetWallMaterial(material);
+
+        wallGO.name = $"Wall_{row}_{col}";
     }
 
     public void UpdateFloor()
